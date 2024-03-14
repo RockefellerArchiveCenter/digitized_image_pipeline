@@ -1,0 +1,238 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  digitized-av-pipeline
+
+  Pipeline for transferring, validating and packaging digitized audiovisual assets.
+
+Mappings:
+  DeployResources:
+    CloudFormationBucket:
+      dev: rac-dev-cloudformation-apps
+      prod: rac-prod-cloudformation-apps
+    CloudFormationBucketPrefix:
+      dev: digitized_av_pipeline
+      prod: digitized_av_pipeline
+    Vpc:
+      dev: "vpc-01ff614b4bb3cbbe3"
+    SecurityGroup:
+      dev: "sg-0f98d77d7bb7b4ce6"
+      prod: "sg-05ba511af720799b6"
+    Subnet:
+      dev: "subnet-098df07b0ab91cb1d"
+      prod: "subnet-0102189437e2babd8"
+    LoadBalancerSubnets:
+      dev: "subnet-016449c4b44a0fc44,subnet-098df07b0ab91cb1d"
+    TargetGroupArn:
+      dev: "arn:aws:elasticloadbalancing:us-east-1:016161564811:targetgroup/DigitizedAvQcDevTargetGroup/fff3d450a30ce372"
+      prod: ""
+  Qc:
+    HostName:
+      dev: "digitized-av-qc.dev.rockarch.org"
+      prod: "digitized-av-qc.rockarch.org"
+  ArchivesSpace:
+    BaseUrl:
+      dev: "https://as.dev.rockarch.org/api"
+      prod: "https://as.rockarch.org/api"
+    Repo:
+      dev: 2
+      prod: 2
+    Username:
+      dev: digitized-av
+      prod: digitized-av
+    
+
+Parameters:
+  Environment:
+    Type: String
+    Description: The environment in which the infrastructure should be deployed.
+    AllowedValues:
+      - dev
+      - prod
+    Default: dev
+  TeamsUrl:
+    Type: String
+    Description: URL for a Teams channel webhook.
+  ArchivesSpacePassword:
+    Type: String
+    Description: ArchivesSpace password.
+
+Resources:
+  # Temporary Storage
+  TemporaryStorage:
+    Type: AWS::EFS::FileSystem
+    Properties: 
+      Encrypted: true
+      FileSystemTags: 
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: digitized-av-temporary-storage
+      LifecyclePolicies: 
+        - TransitionToIA: AFTER_30_DAYS
+      PerformanceMode: generalPurpose
+      ThroughputMode: elastic
+
+  MountTargetResource1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref TemporaryStorage
+      SubnetId: !FindInMap [DeployResources, Subnet, !Ref Environment]
+      SecurityGroups:
+      - !FindInMap [DeployResources, SecurityGroup, !Ref Environment]
+
+  # Temporary Storage Access Point
+  TemporaryStorageAccessPoint:
+    Type: 'AWS::EFS::AccessPoint'
+    Properties:
+      AccessPointTags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: digitized-av-temporary-storage
+      FileSystemId: !Ref TemporaryStorage
+      PosixUser:
+        Uid: "1000"
+        Gid: "1000"
+      RootDirectory:
+        CreationInfo:
+          OwnerGid: "1000"
+          OwnerUid: "1000"
+          Permissions: "755"
+        Path: "/digitized-av"
+  
+  # ECS Cluster
+  DigitizedAVECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties: 
+      CapacityProviders: 
+        - FARGATE
+      ClusterName: DigitizedAVCluster
+      Tags: 
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: digitized-av-ecs-cluster
+
+  # Notifications Lambda
+  NotificationsLambda:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL:
+        !Join ["/", 
+          [
+          "https://s3.amazonaws.com",
+          !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
+          !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
+          "digitized_av_notifications_template.yaml"
+          ]
+        ]
+      Parameters:
+        ApplicationEnvironment: !Ref Environment
+        ApplicationName: digitized_av_notifications
+        TeamsUrl: !Ref TeamsUrl
+
+  # Trigger Lambda
+  TriggerLambda:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: 
+      - NotificationsLambda
+      - QCWebApplication
+    Properties:
+      TemplateURL:
+        !Join ["/", 
+          [
+          "https://s3.amazonaws.com",
+          !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
+          !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
+          "digitized_av_trigger_template.yaml"
+          ]
+        ]
+      Parameters:
+        ApplicationEnvironment: !Ref Environment
+        ApplicationName: digitized_av_trigger
+        ECSClusterName: !Ref DigitizedAVECSCluster
+        ECSSubnetName: !FindInMap [DeployResources, Subnet, !Ref Environment]
+        
+  # Validate ECS Task
+  ValidateECSTask:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn:
+      - TriggerLambda
+      - NotificationsLambda
+    Properties:
+      TemplateURL:
+        !Join ["/", 
+          [
+          "https://s3.amazonaws.com",
+          !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
+          !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
+          "digitized_av_validation_template.yaml"
+          ]
+        ]
+      Parameters:
+        ApplicationEnvironment: !Ref Environment
+        ApplicationName: digitized_av_validation
+        EfsId: !Ref TemporaryStorage
+        EfsAccessPointId: !Ref TemporaryStorageAccessPoint
+        EfsRootPath: '/efs'
+        StoragePath: 'validate'
+        DestinationPath: 'qc'
+
+  # QC web application
+  QCWebApplication:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: NotificationsLambda
+    Properties:
+      TemplateURL:
+        !Join ["/", 
+          [
+          "https://s3.amazonaws.com",
+          !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
+          !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
+          "digitized_av_qc_template.yaml"
+          ]
+        ]
+      Parameters:
+        SubnetId: !FindInMap [DeployResources, Subnet, !Ref Environment]
+        ApplicationEnvironment: !Ref Environment
+        ApplicationName: digitized_av_qc
+        ApplicationHostName: !FindInMap [Qc, HostName, !Ref Environment]
+        EcsClusterName: !Ref DigitizedAVECSCluster
+        EfsId: !Ref TemporaryStorage
+        EfsAccessPointId: !Ref TemporaryStorageAccessPoint
+        EfsRootPath: '/efs'
+        StoragePath: 'qc'
+        DestinationPath: 'packaging'
+        ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
+        ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
+        ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
+        ArchivesSpacePassword: !Ref ArchivesSpacePassword
+        TargetGroupArn: !FindInMap [DeployResources, TargetGroupArn, !Ref Environment]
+  
+  # Package ECS Task
+  PackageECSTask:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: NotificationsLambda
+    Properties:
+      TemplateURL:
+        !Join ["/", 
+          [
+          "https://s3.amazonaws.com",
+          !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
+          !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
+          "digitized_av_packaging_template.yaml"
+          ]
+        ]
+      Parameters:
+        ApplicationEnvironment: !Ref Environment
+        ApplicationName: digitized_av_packaging
+        EfsId: !Ref TemporaryStorage
+        EfsAccessPointId: !Ref TemporaryStorageAccessPoint
+        EfsRootPath: '/efs'
+        StoragePath: 'packaging'
+        TemporaryPath: 'packaging_tmp'
+        DestinationBucketName: 'rac-dev-zorya-staging'
+        ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
+        ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
+        ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
+        ArchivesSpacePassword: !Ref ArchivesSpacePassword
