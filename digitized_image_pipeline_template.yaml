@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  digitized-av-pipeline
+  digitized-image-pipeline
 
-  Pipeline for transferring, validating and packaging digitized audiovisual assets.
+  Pipeline for transferring, validating and packaging digitized still image and textual assets.
 
 Mappings:
   DeployResources:
@@ -10,8 +10,8 @@ Mappings:
       dev: rac-dev-cloudformation-apps
       prod: rac-prod-cloudformation-apps
     CloudFormationBucketPrefix:
-      dev: digitized_av_pipeline
-      prod: digitized_av_pipeline
+      dev: digitized_image_pipeline
+      prod: digitized_image_pipeline
     Vpc:
       dev: "vpc-01ff614b4bb3cbbe3"
     SecurityGroup:
@@ -23,12 +23,12 @@ Mappings:
     LoadBalancerSubnets:
       dev: "subnet-016449c4b44a0fc44,subnet-098df07b0ab91cb1d"
     TargetGroupArn:
-      dev: "arn:aws:elasticloadbalancing:us-east-1:016161564811:targetgroup/DigitizedAvQcDevTargetGroup/fff3d450a30ce372"
+      dev: "arn:aws:elasticloadbalancing:us-east-1:016161564811:targetgroup/DigitizedImageQcDevTargetGroup/fff3d450a30ce372"
       prod: ""
   Qc:
     HostName:
-      dev: "digitized-av-qc.dev.rockarch.org"
-      prod: "digitized-av-qc.rockarch.org"
+      dev: "digitized-image-qc.dev.rockarch.org"
+      prod: "digitized-image-qc.rockarch.org"
   ArchivesSpace:
     BaseUrl:
       dev: "https://as.dev.rockarch.org/api"
@@ -37,8 +37,8 @@ Mappings:
       dev: 2
       prod: 2
     Username:
-      dev: digitized-av
-      prod: digitized-av
+      dev: digitized-image
+      prod: digitized-image
     
 
 Parameters:
@@ -66,7 +66,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
         - Key: Application
-          Value: digitized-av-temporary-storage
+          Value: digitized-image-temporary-storage
       LifecyclePolicies: 
         - TransitionToIA: AFTER_30_DAYS
       PerformanceMode: generalPurpose
@@ -88,7 +88,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
         - Key: Application
-          Value: digitized-av-temporary-storage
+          Value: digitized-image-temporary-storage
       FileSystemId: !Ref TemporaryStorage
       PosixUser:
         Uid: "1000"
@@ -98,20 +98,20 @@ Resources:
           OwnerGid: "1000"
           OwnerUid: "1000"
           Permissions: "755"
-        Path: "/digitized-av"
+        Path: "/digitized-image"
   
   # ECS Cluster
-  DigitizedAVECSCluster:
+  DigitizedImageECSCluster:
     Type: AWS::ECS::Cluster
     Properties: 
       CapacityProviders: 
         - FARGATE
-      ClusterName: DigitizedAVCluster
+      ClusterName: DigitizedImageCluster
       Tags: 
         - Key: Environment
           Value: !Ref Environment
         - Key: Application
-          Value: digitized-av-ecs-cluster
+          Value: digitized-image-ecs-cluster
 
   # Notifications Lambda
   NotificationsLambda:
@@ -123,12 +123,12 @@ Resources:
           "https://s3.amazonaws.com",
           !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
           !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
-          "digitized_av_notifications_template.yaml"
+          "digitized_image_notifications_template.yaml"
           ]
         ]
       Parameters:
         ApplicationEnvironment: !Ref Environment
-        ApplicationName: digitized_av_notifications
+        ApplicationName: digitized_image_notifications
         TeamsUrl: !Ref TeamsUrl
 
   # Trigger Lambda
@@ -144,13 +144,13 @@ Resources:
           "https://s3.amazonaws.com",
           !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
           !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
-          "digitized_av_trigger_template.yaml"
+          "digitized_image_trigger_template.yaml"
           ]
         ]
       Parameters:
         ApplicationEnvironment: !Ref Environment
-        ApplicationName: digitized_av_trigger
-        ECSClusterName: !Ref DigitizedAVECSCluster
+        ApplicationName: digitized_image_trigger
+        ECSClusterName: !Ref DigitizedImageECSCluster
         ECSSubnetName: !FindInMap [DeployResources, Subnet, !Ref Environment]
         
   # Validate ECS Task
@@ -166,12 +166,12 @@ Resources:
           "https://s3.amazonaws.com",
           !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
           !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
-          "digitized_av_validation_template.yaml"
+          "digitized_image_validation_template.yaml"
           ]
         ]
       Parameters:
         ApplicationEnvironment: !Ref Environment
-        ApplicationName: digitized_av_validation
+        ApplicationName: digitized_image_validation
         EfsId: !Ref TemporaryStorage
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
         EfsRootPath: '/efs'
@@ -189,15 +189,15 @@ Resources:
           "https://s3.amazonaws.com",
           !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
           !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
-          "digitized_av_qc_template.yaml"
+          "digitized_image_qc_template.yaml"
           ]
         ]
       Parameters:
         SubnetId: !FindInMap [DeployResources, Subnet, !Ref Environment]
         ApplicationEnvironment: !Ref Environment
-        ApplicationName: digitized_av_qc
+        ApplicationName: digitized_image_qc
         ApplicationHostName: !FindInMap [Qc, HostName, !Ref Environment]
-        EcsClusterName: !Ref DigitizedAVECSCluster
+        EcsClusterName: !Ref DigitizedImageECSCluster
         EfsId: !Ref TemporaryStorage
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
         EfsRootPath: '/efs'
@@ -220,12 +220,12 @@ Resources:
           "https://s3.amazonaws.com",
           !FindInMap [DeployResources, CloudFormationBucket, !Ref Environment],
           !FindInMap [DeployResources, CloudFormationBucketPrefix, !Ref Environment],
-          "digitized_av_packaging_template.yaml"
+          "digitized_image_packaging_template.yaml"
           ]
         ]
       Parameters:
         ApplicationEnvironment: !Ref Environment
-        ApplicationName: digitized_av_packaging
+        ApplicationName: digitized_image_packaging
         EfsId: !Ref TemporaryStorage
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
         EfsRootPath: '/efs'

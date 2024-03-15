@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  digitized-av-trigger
+  digitized-image-trigger
 
-  Handles notifications for validation and packaging of incoming digitized audiovisual assets.
+  Handles notifications for validation and packaging of incoming digitized still image and textual assets.
 
 Parameters:
   ApplicationEnvironment:
@@ -22,7 +22,7 @@ Parameters:
     Description: Name of the subnet in which the ECS Task should be triggered.
 
 Resources:
-  DigitizedAvTriggerFunctionRole:
+  DigitizedImageTriggerFunctionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -38,13 +38,13 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies: 
-        - PolicyName: DigitizedAVRunECSTaskPolicy
+        - PolicyName: DigitizedImageRunECSTaskPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: 'ecs:RunTask'
-                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/digitized_av_*'
+                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/digitized_image_*'
               - Effect: Allow
                 Action: 'ecs:DescribeServices'
                 Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${ECSClusterName}/*'
@@ -57,7 +57,7 @@ Resources:
                 Condition:
                   StringLike:
                     'iam:PassedToService': 'ecs-tasks.amazonaws.com'
-        - PolicyName: DigitizedAVParameterStorePolicy
+        - PolicyName: DigitizedImageParameterStorePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -98,17 +98,17 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
       Type: String
-      Value: !ImportValue DigitizedAV-QcEcsServiceName
+      Value: !ImportValue DigitizedImage-QcEcsServiceName
 
-  DigitizedAvTriggerFunction:
+  DigitizedImageTriggerFunction:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: !Sub 'rac-${ApplicationEnvironment}-lambda'
         S3Key: !Sub '${ApplicationName}.zip'
       FunctionName: !Ref ApplicationName
-      Handler: handle_digitized_av_trigger.lambda_handler
-      Role: !GetAtt DigitizedAvTriggerFunctionRole.Arn
+      Handler: handle_digitized_image_trigger.lambda_handler
+      Role: !GetAtt DigitizedImageTriggerFunctionRole.Arn
       Runtime: python3.9
       Timeout: 10
       Environment:
@@ -128,38 +128,38 @@ Resources:
   TriggerLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${DigitizedAvTriggerFunction}"
+      LogGroupName: !Sub "/aws/lambda/${DigitizedImageTriggerFunction}"
       RetentionInDays: 90
 
   # Allow S3 to trigger Lambda
-  DigitizedAvTriggerS3FunctionPermission:
+  DigitizedImageTriggerS3FunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref DigitizedAvTriggerFunction
+      FunctionName: !Ref DigitizedImageTriggerFunction
       Principal: s3.amazonaws.com
-      SourceArn: !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-av-upload-*
+      SourceArn: !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload-*
 
   # Allow SNS to trigger Lambda
-  DigitizedAvTriggerSNSFunctionPermission:
+  DigitizedImageTriggerSNSFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref DigitizedAvTriggerFunction
+      FunctionName: !Ref DigitizedImageTriggerFunction
       Principal: sns.amazonaws.com
-      SourceArn: !ImportValue DigitizedAV-SNSTopicArn
+      SourceArn: !ImportValue DigitizedImage-SNSTopicArn
   
   # Subscribe Lambda to SNS
-  DigitizedAvTriggerFunctionDigitizedAvEvents:
+  DigitizedImageTriggerFunctionDigitizedImageEvents:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt DigitizedAvTriggerFunction.Arn
+      Endpoint: !GetAtt DigitizedImageTriggerFunction.Arn
       Protocol: lambda
-      TopicArn: !ImportValue DigitizedAV-SNSTopicArn
+      TopicArn: !ImportValue DigitizedImage-SNSTopicArn
 
 Outputs:
-  DigitizedAvTriggerFunction:
-    Description: "Digitized AV Trigger Lambda Function ARN"
-    Value: !GetAtt DigitizedAvTriggerFunction.Arn
+  DigitizedImageTriggerFunction:
+    Description: "Digitized Image Trigger Lambda Function ARN"
+    Value: !GetAtt DigitizedImageTriggerFunction.Arn
     Export:
-      Name: DigitizedAV-TriggerArn
+      Name: DigitizedImage-TriggerArn

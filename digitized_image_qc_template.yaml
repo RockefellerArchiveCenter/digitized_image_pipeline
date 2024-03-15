@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  digitized-av-qc
+  digitized-image-qc
 
-  Supports quality control of digitized audiovisual assets.
+  Supports quality control of digitized still image and textual assets.
 
 Parameters:
   ContainerAccountId:
@@ -57,7 +57,7 @@ Parameters:
   SqlDatabaseName:
     Type: String
     Description: Name of database.
-    Default: digitized_av_qc_db
+    Default: digitized_image_qc_db
   SqlDatabasePort:
     Type: Number
     Description: Port at which SQL database is available.
@@ -137,37 +137,37 @@ Resources:
                 Resource: 
                   - '*'
 
-  DigitizedAvQcUser:
+  DigitizedImageQcUser:
     Type: AWS::IAM::User
 
-  DigitizedAvQcUserAccessKey:
+  DigitizedImageQcUserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties: 
-      UserName: !Ref DigitizedAvQcUser
+      UserName: !Ref DigitizedImageQcUser
 
-  DigitizedAvQcRole:
+  DigitizedImageQcRole:
     Type: AWS::IAM::Role
     Properties: 
-      RoleName: digitized-av-qc-role
+      RoleName: digitized-image-qc-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
               AWS:
-                - !GetAtt DigitizedAvQcUser.Arn
+                - !GetAtt DigitizedImageQcUser.Arn
             Action:
               - 'sts:AssumeRole'
       Description: !Sub 'Allows creation of SNS messages.'
       Policies:
-        - PolicyName: DigitizedAvQcSNSPolicy
+        - PolicyName: DigitizedImageQcSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: 'sns:Publish'
-                Resource: !ImportValue DigitizedAV-SNSTopicArn
-        - PolicyName: DigitizedAvQcSSMPolicy
+                Resource: !ImportValue DigitizedImage-SNSTopicArn
+        - PolicyName: DigitizedImageQcSSMPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -182,7 +182,7 @@ Resources:
     Properties:
       Description: 'Secrets for RDS instance'
       GenerateSecretString:
-        SecretStringTemplate: '{"username": "digitizedavqcuser"}'
+        SecretStringTemplate: '{"username": "digitizedimageqcuser"}'
         GenerateStringKey: 'password'
         PasswordLength: 16
         ExcludeCharacters: '"@/\'
@@ -214,7 +214,7 @@ Resources:
   QcLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
-      LogGroupName: !Sub "/digitized_av/ecs/${ApplicationName}"
+      LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
   
   QcECSTask:
@@ -236,19 +236,19 @@ Resources:
             - Name: APPLICATION_PORT
               Value: "80"
             - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref DigitizedAvQcUserAccessKey
+              Value: !Ref DigitizedImageQcUserAccessKey
             - Name: AWS_SECRET_ACCESS_KEY
-              Value: !GetAtt DigitizedAvQcUserAccessKey.SecretAccessKey
+              Value: !GetAtt DigitizedImageQcUserAccessKey.SecretAccessKey
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
-              Value: !GetAtt DigitizedAvQcRole.Arn
+              Value: !GetAtt DigitizedImageQcRole.Arn
             - Name: STORAGE_PATH
               Value: !Sub '${EfsRootPath}/${StoragePath}'
             - Name: DESTINATION_PATH
               Value: !Sub '${EfsRootPath}/${DestinationPath}'
             - Name: AWS_SNS_TOPIC
-              Value: !ImportValue DigitizedAV-SNSTopicArn
+              Value: !ImportValue DigitizedImage-SNSTopicArn
             - Name: AQUILA_BASEURL
               Value: http://aquila.dev.rockarch.org
             - Name: SQL_ENGINE
@@ -319,4 +319,4 @@ Outputs:
     Value: !GetAtt QcECSService.Name
     Export:
       Name:
-        DigitizedAV-QcEcsServiceName
+        DigitizedImage-QcEcsServiceName

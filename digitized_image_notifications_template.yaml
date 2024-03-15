@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  digitized-av-notifications
+  digitized-image-notifications
 
-  Handles notifications for validation and packaging of incoming digitized audiovisual assets.
+  Handles notifications for validation and packaging of incoming digitized still image and textual assets.
 
 Parameters:
   ApplicationEnvironment:
@@ -19,7 +19,7 @@ Parameters:
     Description: URL for a Teams channel webhook.
 
 Resources:
-  HandleDigitizedAVNotificationsRole:
+  HandleDigitizedImageNotificationsRole:
     Type: AWS::IAM::Role
     Properties: 
       AssumeRolePolicyDocument:
@@ -35,7 +35,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: DigitizedAVParameterStorePolicy
+        - PolicyName: DigitizedImageParameterStorePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -44,10 +44,10 @@ Resources:
                   - 'ssm:GetParametersByPath*'
                 Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}*'
   
-  DigitizedAVEventsTopic:
+  DigitizedImageEventsTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: digitized-av-events
+        TopicName: digitized-image-events
 
   TeamsUrlParameter:
     Type: AWS::SSM::Parameter
@@ -60,15 +60,15 @@ Resources:
       Type: String
       Value: !Ref TeamsUrl
 
-  HandleDigitizedAVNotificationsFunction:
+  HandleDigitizedImageNotificationsFunction:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: !Sub 'rac-${ApplicationEnvironment}-lambda'
         S3Key: !Sub '${ApplicationName}.zip'
       FunctionName: !Ref ApplicationName
-      Handler: handle_digitized_av_notifications.lambda_handler
-      Role: !GetAtt HandleDigitizedAVNotificationsRole.Arn
+      Handler: handle_digitized_image_notifications.lambda_handler
+      Role: !GetAtt HandleDigitizedImageNotificationsRole.Arn
       Runtime: python3.9
       Timeout: 30
       Environment:
@@ -86,31 +86,31 @@ Resources:
   NotificationsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${HandleDigitizedAVNotificationsFunction}"
+      LogGroupName: !Sub "/aws/lambda/${HandleDigitizedImageNotificationsFunction}"
       RetentionInDays: 90
   
-  HandleDigitizedAVNotificationsFunctionDigitizedAvEventsPermission:
+  HandleDigitizedImageNotificationsFunctionDigitizedImageEventsPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref HandleDigitizedAVNotificationsFunction
+      FunctionName: !Ref HandleDigitizedImageNotificationsFunction
       Principal: sns.amazonaws.com
-      SourceArn: !Ref DigitizedAVEventsTopic
+      SourceArn: !Ref DigitizedImageEventsTopic
   
-  HandleDigitizedAVNotificationsFunctionDigitizedAvEvents:
+  HandleDigitizedImageNotificationsFunctionDigitizedImageEvents:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt HandleDigitizedAVNotificationsFunction.Arn
+      Endpoint: !GetAtt HandleDigitizedImageNotificationsFunction.Arn
       Protocol: lambda
-      TopicArn: !Ref DigitizedAVEventsTopic
+      TopicArn: !Ref DigitizedImageEventsTopic
 
 Outputs:
-  HandleDigitizedAVNotificationsFunction:
-    Description: 'Handle Digitized AV Notifications Lambda Function ARN'
-    Value: !GetAtt HandleDigitizedAVNotificationsFunction.Arn
-  DigitizedAVEventsTopic:
-    Description: 'Digitized AV Events SNS Topic ARN'
-    Value: !Ref DigitizedAVEventsTopic
+  HandleDigitizedImageNotificationsFunction:
+    Description: 'Handle Digitized Image Notifications Lambda Function ARN'
+    Value: !GetAtt HandleDigitizedImageNotificationsFunction.Arn
+  DigitizedImageEventsTopic:
+    Description: 'Digitized Image Events SNS Topic ARN'
+    Value: !Ref DigitizedImageEventsTopic
     Export:
       Name:
-        DigitizedAV-SNSTopicArn
+        DigitizedImage-SNSTopicArn

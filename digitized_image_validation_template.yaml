@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  digitized-av-validation
+  digitized-image-validation
 
-  Handles validation of incoming digitized audiovisual assets.
+  Handles validation of incoming digitized still image and textual assets.
 
 Parameters:
   ContainerAccountId:
@@ -60,15 +60,15 @@ Resources:
                 Resource: 
                   - '*'
 
-  DigitizedAvValidationUser:
+  DigitizedImageValidationUser:
     Type: AWS::IAM::User
 
-  DigitizedAvValidationUserAccessKey:
+  DigitizedImageValidationUserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties: 
-      UserName: !Ref DigitizedAvValidationUser
+      UserName: !Ref DigitizedImageValidationUser
 
-  DigitizedAvValidationRole:
+  DigitizedImageValidationRole:
     Type: AWS::IAM::Role
     Properties: 
       AssumeRolePolicyDocument:
@@ -77,12 +77,12 @@ Resources:
           - Effect: Allow
             Principal: 
               AWS:
-                - !GetAtt DigitizedAvValidationUser.Arn
+                - !GetAtt DigitizedImageValidationUser.Arn
             Action:
               - 'sts:AssumeRole'
       Description: !Sub 'Allows management of S3 assets and creation of SNS messages.'
       Policies:
-        - PolicyName: DigitizedAvValidationS3BucketPolicy
+        - PolicyName: DigitizedImageValidationS3BucketPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -92,7 +92,7 @@ Resources:
                 Resource: 
                   - !GetAtt AudioUploadBucket.Arn
                   - !GetAtt VideoUploadBucket.Arn
-        - PolicyName: DigitizedAvValidationS3ObjectPolicy
+        - PolicyName: DigitizedImageValidationS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -103,18 +103,18 @@ Resources:
                 Resource: 
                   - !Sub '${AudioUploadBucket.Arn}/*'
                   - !Sub '${VideoUploadBucket.Arn}/*'
-        - PolicyName: DigitizedAvValidationSNSPolicy
+        - PolicyName: DigitizedImageValidationSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: 'sns:Publish'
-                Resource: !ImportValue DigitizedAV-SNSTopicArn
+                Resource: !ImportValue DigitizedImage-SNSTopicArn
 
   ValidationLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
-      LogGroupName: !Sub "/digitized_av/ecs/${ApplicationName}"
+      LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
 
   ValidationECSTask:
@@ -128,11 +128,11 @@ Resources:
           Essential: true
           Environment:
             - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref DigitizedAvValidationUserAccessKey
+              Value: !Ref DigitizedImageValidationUserAccessKey
             - Name: AWS_SECRET_ACCESS_KEY
-              Value: !GetAtt DigitizedAvValidationUserAccessKey.SecretAccessKey
+              Value: !GetAtt DigitizedImageValidationUserAccessKey.SecretAccessKey
             - Name: AWS_ROLE_ARN
-              Value: !GetAtt DigitizedAvValidationRole.Arn
+              Value: !GetAtt DigitizedImageValidationRole.Arn
             - Name: ENV
               Value: !Ref ApplicationEnvironment
             - Name: APP_CONFIG_PATH
@@ -144,7 +144,7 @@ Resources:
             - Name: AWS_REGION_NAME
               Value: !Ref AWS::Region
             - Name: AWS_SNS_TOPIC
-              Value: !ImportValue DigitizedAV-SNSTopicArn
+              Value: !ImportValue DigitizedImage-SNSTopicArn
           MountPoints:
             - SourceVolume: efs
               ContainerPath: !Ref EfsRootPath
@@ -176,10 +176,10 @@ Resources:
   AudioUploadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-av-upload-audio
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-upload-audio
       NotificationConfiguration:
         LambdaConfigurations:
-          - Function: !ImportValue DigitizedAV-TriggerArn
+          - Function: !ImportValue DigitizedImage-TriggerArn
             Event: 's3:ObjectCreated:*'
       PublicAccessBlockConfiguration: 
         BlockPublicAcls: true
@@ -190,10 +190,10 @@ Resources:
   VideoUploadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-av-upload-video
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-upload-video
       NotificationConfiguration:
         LambdaConfigurations:
-          - Function: !ImportValue DigitizedAV-TriggerArn
+          - Function: !ImportValue DigitizedImage-TriggerArn
             Event: 's3:ObjectCreated:*'
       PublicAccessBlockConfiguration: 
         BlockPublicAcls: true

@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  digitized-av-packaging
+  digitized-image-packaging
 
-  Handles packaging of incoming digitized audiovisual assets.
+  Handles packaging of incoming digitized still image and textual assets.
 
 Parameters:
   ContainerAccountId:
@@ -116,30 +116,30 @@ Resources:
                 Resource: 
                   - '*'
 
-  DigitizedAvPackagingUser:
+  DigitizedImagePackagingUser:
     Type: AWS::IAM::User
 
-  DigitizedAvPackagingUserAccessKey:
+  DigitizedImagePackagingUserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties: 
-      UserName: !Ref DigitizedAvPackagingUser
+      UserName: !Ref DigitizedImagePackagingUser
 
-  DigitizedAvPackagingRole:
+  DigitizedImagePackagingRole:
     Type: AWS::IAM::Role
     Properties: 
-      RoleName: digitized-av-packaging-role
+      RoleName: digitized-image-packaging-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
               AWS:
-                - !GetAtt DigitizedAvPackagingUser.Arn
+                - !GetAtt DigitizedImagePackagingUser.Arn
             Action:
               - 'sts:AssumeRole'
       Description: !Sub 'Allows management of S3 assets and creation of SNS messages.'
       Policies:
-        - PolicyName: DigitizedAvPackagingS3ObjectPolicy
+        - PolicyName: DigitizedImagePackagingS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -153,14 +153,14 @@ Resources:
                   - !Sub '${VideoAccessBucket.Arn}/*'
                   - !Sub '${VideoMezzanineBucket.Arn}/*'
                   - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
-        - PolicyName: DigitizedAvPackagingSNSPolicy
+        - PolicyName: DigitizedImagePackagingSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action: 'sns:Publish'
-                Resource: !ImportValue DigitizedAV-SNSTopicArn
-        - PolicyName: DigitizedAvPackagingSSMPolicy
+                Resource: !ImportValue DigitizedImage-SNSTopicArn
+        - PolicyName: DigitizedImagePackagingSSMPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -173,7 +173,7 @@ Resources:
   PackagingLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
-      LogGroupName: !Sub "/digitized_av/ecs/${ApplicationName}"
+      LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
   
   PackagingECSTask:
@@ -191,13 +191,13 @@ Resources:
             - Name: APP_CONFIG_PATH
               Value: !Ref ApplicationName
             - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref DigitizedAvPackagingUserAccessKey
+              Value: !Ref DigitizedImagePackagingUserAccessKey
             - Name: AWS_SECRET_ACCESS_KEY
-              Value: !GetAtt DigitizedAvPackagingUserAccessKey.SecretAccessKey
+              Value: !GetAtt DigitizedImagePackagingUserAccessKey.SecretAccessKey
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
-              Value: !GetAtt DigitizedAvPackagingRole.Arn
+              Value: !GetAtt DigitizedImagePackagingRole.Arn
             - Name: SOURCE_DIR
               Value: !Sub '${EfsRootPath}/${StoragePath}'
             - Name: TMP_DIR
@@ -213,7 +213,7 @@ Resources:
             - Name: AWS_DESTINATION_BUCKET_VIDEO_MEZZANINE
               Value: !Ref VideoMezzanineBucket
             - Name: AWS_SNS_TOPIC
-              Value: !ImportValue DigitizedAV-SNSTopicArn      
+              Value: !ImportValue DigitizedImage-SNSTopicArn      
           MountPoints:
             - SourceVolume: efs
               ContainerPath: !Ref EfsRootPath
@@ -245,7 +245,7 @@ Resources:
   PosterBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-av-storage-video-poster
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-video-poster
       PublicAccessBlockConfiguration: 
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -255,7 +255,7 @@ Resources:
   AudioAccessBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-av-storage-audio-access
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-audio-access
       PublicAccessBlockConfiguration: 
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -265,7 +265,7 @@ Resources:
   VideoAccessBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-av-storage-video-access
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-video-access
       PublicAccessBlockConfiguration: 
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -275,7 +275,7 @@ Resources:
   VideoMezzanineBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-av-storage-video-mezzanine
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-video-mezzanine
       PublicAccessBlockConfiguration: 
         BlockPublicAcls: true
         BlockPublicPolicy: true
