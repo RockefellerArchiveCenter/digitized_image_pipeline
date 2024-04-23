@@ -90,8 +90,7 @@ Resources:
                 Action: 
                   - 's3:ListBucket'
                 Resource: 
-                  - !GetAtt AudioUploadBucket.Arn
-                  - !GetAtt VideoUploadBucket.Arn
+                  - !GetAtt UploadBucket.Arn
         - PolicyName: DigitizedImageValidationS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -101,8 +100,7 @@ Resources:
                   - 's3:GetObject'
                   - 's3:DeleteObject'
                 Resource: 
-                  - !Sub '${AudioUploadBucket.Arn}/*'
-                  - !Sub '${VideoUploadBucket.Arn}/*'
+                  - !Sub '${UploadBucket.Arn}/*'
         - PolicyName: DigitizedImageValidationSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -173,24 +171,10 @@ Resources:
               AccessPointId: !Ref EfsAccessPointId
               IAM: DISABLED
   
-  AudioUploadBucket:
+  UploadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-image-upload-audio
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Function: !ImportValue DigitizedImage-TriggerArn
-            Event: 's3:ObjectCreated:*'
-      PublicAccessBlockConfiguration: 
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
- 
-  VideoUploadBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-image-upload-video
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-upload
       NotificationConfiguration:
         LambdaConfigurations:
           - Function: !ImportValue DigitizedImage-TriggerArn
@@ -205,9 +189,6 @@ Outputs:
   ValidationECSTask:
     Description: "Validation ECS Task Definition ARN"
     Value: !Ref ValidationECSTask
-  AudioUploadBucket:
-    Description: "Audio upload S3 bucket ARN"
-    Value: !GetAtt AudioUploadBucket.Arn
-  VideoUploadBucket:
-    Description: "Video upload S3 bucket ARN"
-    Value: !GetAtt VideoUploadBucket.Arn  
+  UploadBucket:
+    Description: "Upload S3 bucket ARN"
+    Value: !GetAtt UploadBucket.Arn

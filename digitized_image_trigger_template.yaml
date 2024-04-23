@@ -109,7 +109,7 @@ Resources:
       FunctionName: !Ref ApplicationName
       Handler: handle_digitized_image_trigger.lambda_handler
       Role: !GetAtt DigitizedImageTriggerFunctionRole.Arn
-      Runtime: python3.9
+      Runtime: python3.11
       Timeout: 10
       Environment:
         Variables:
@@ -138,7 +138,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref DigitizedImageTriggerFunction
       Principal: s3.amazonaws.com
-      SourceArn: !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload-*
+      SourceArn: !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload
 
   # Allow SNS to trigger Lambda
   DigitizedImageTriggerSNSFunctionPermission:

@@ -148,10 +148,6 @@ Resources:
                   - 's3:PutObject'
                   - 's3:CreateMultipartUpload'
                 Resource: 
-                  - !Sub '${PosterBucket.Arn}/*'
-                  - !Sub '${AudioAccessBucket.Arn}/*'
-                  - !Sub '${VideoAccessBucket.Arn}/*'
-                  - !Sub '${VideoMezzanineBucket.Arn}/*'
                   - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
         - PolicyName: DigitizedImagePackagingSNSPolicy
           PolicyDocument:
@@ -204,14 +200,6 @@ Resources:
               Value: !Sub '${EfsRootPath}/${TemporaryPath}'
             - Name: AWS_DESTINATION_BUCKET
               Value: !Ref DestinationBucketName
-            - Name: AWS_DESTINATION_BUCKET_POSTER
-              Value: !Ref PosterBucket
-            - Name: AWS_DESTINATION_BUCKET_AUDIO_ACCESS
-              Value: !Ref AudioAccessBucket
-            - Name: AWS_DESTINATION_BUCKET_VIDEO_ACCESS
-              Value: !Ref VideoAccessBucket
-            - Name: AWS_DESTINATION_BUCKET_VIDEO_MEZZANINE
-              Value: !Ref VideoMezzanineBucket
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn      
           MountPoints:
@@ -241,60 +229,8 @@ Resources:
             AuthorizationConfig:
               AccessPointId: !Ref EfsAccessPointId
               IAM: DISABLED
-  
-  PosterBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-video-poster
-      PublicAccessBlockConfiguration: 
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-
-  AudioAccessBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-audio-access
-      PublicAccessBlockConfiguration: 
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-
-  VideoAccessBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-video-access
-      PublicAccessBlockConfiguration: 
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-
-  VideoMezzanineBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-image-storage-video-mezzanine
-      PublicAccessBlockConfiguration: 
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
 
 Outputs:
   PackagingECSTask:
     Description: Packaging ECS Task Definition ARN
     Value: !Ref PackagingECSTask
-  PosterBucket:
-    Description: Video poster file bucket ARN
-    Value: !GetAtt PosterBucket.Arn
-  AudioAccessBucket:
-    Description: Audio access file bucket ARN
-    Value: !GetAtt AudioAccessBucket.Arn
-  VideoAccessBucket:
-    Description: Video access file bucket ARN
-    Value: !GetAtt VideoAccessBucket.Arn
-  VideoMezzanineBucket:
-    Description: Video mezzanine file bucket ARN
-    Value: !GetAtt VideoMezzanineBucket.Arn

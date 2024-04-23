@@ -69,7 +69,7 @@ Resources:
       FunctionName: !Ref ApplicationName
       Handler: handle_digitized_image_notifications.lambda_handler
       Role: !GetAtt HandleDigitizedImageNotificationsRole.Arn
-      Runtime: python3.9
+      Runtime: python3.11
       Timeout: 30
       Environment:
         Variables:
@@ -96,6 +96,13 @@ Resources:
       FunctionName: !Ref HandleDigitizedImageNotificationsFunction
       Principal: sns.amazonaws.com
       SourceArn: !Ref DigitizedImageEventsTopic
+
+  HandleDigitizedImageNotificationsFunctionDigitizedImageEventsTravisEcRPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HandleDigitizedImageNotificationsFunction
+      Action: "lambda:UpdateFunctionCode"
+      Principal: "arn:aws:iam::817658541382:user/TravisECR"
   
   HandleDigitizedImageNotificationsFunctionDigitizedImageEvents:
     Type: AWS::SNS::Subscription

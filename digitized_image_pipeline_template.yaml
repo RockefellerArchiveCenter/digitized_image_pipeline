@@ -23,12 +23,16 @@ Mappings:
     LoadBalancerSubnets:
       dev: "subnet-016449c4b44a0fc44,subnet-098df07b0ab91cb1d"
     TargetGroupArn:
-      dev: "arn:aws:elasticloadbalancing:us-east-1:016161564811:targetgroup/DigitizedImageQcDevTargetGroup/fff3d450a30ce372"
+      dev: "arn:aws:elasticloadbalancing:us-east-1:016161564811:targetgroup/load-b-Digit-A3QM8KDZHGJZ/3773af57ebe8b9c4"
       prod: ""
   Qc:
     HostName:
       dev: "digitized-image-qc.dev.rockarch.org"
       prod: "digitized-image-qc.rockarch.org"
+  Package:
+    DestinationBucket:
+      dev: "rac-dev-zorya-staging"
+      prod: "rac-zorya-staging"
   ArchivesSpace:
     BaseUrl:
       dev: "https://as.dev.rockarch.org/api"
@@ -231,7 +235,7 @@ Resources:
         EfsRootPath: '/efs'
         StoragePath: 'packaging'
         TemporaryPath: 'packaging_tmp'
-        DestinationBucketName: 'rac-dev-zorya-staging'
+        DestinationBucketName: !FindInMap [Package, DestinationBucket, !Ref Environment]
         ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
