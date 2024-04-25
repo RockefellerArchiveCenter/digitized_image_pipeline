@@ -33,6 +33,9 @@ Mappings:
     DestinationBucket:
       dev: "rac-dev-zorya-staging"
       prod: "rac-zorya-staging"
+    PdfDestinationBucket:
+      dev: "raciif-dev"
+      prod: "raciiif-prod"
   ArchivesSpace:
     BaseUrl:
       dev: "https://as.dev.rockarch.org/api"
@@ -236,6 +239,7 @@ Resources:
         StoragePath: 'packaging'
         TemporaryPath: 'packaging_tmp'
         DestinationBucketName: !FindInMap [Package, DestinationBucket, !Ref Environment]
+        PdfDestinationBucketName: !FindInMap [Package, PdfDestinationBucket, !Ref Environment]
         ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]

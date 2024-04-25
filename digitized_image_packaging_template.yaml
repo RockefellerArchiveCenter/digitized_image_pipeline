@@ -36,6 +36,9 @@ Parameters:
   DestinationBucketName:
     Type: String
     Description: Name of S3 bucket to which packaged files should be delivered.
+  PdfDestinationBucketName:
+    Type: String 
+    Description: Name of s3 bucket to which PDF files should be delivered.
   ArchivesSpaceRepo:
     Type: String
     Description: ArchivesSpace repository identifier.
@@ -149,6 +152,7 @@ Resources:
                   - 's3:CreateMultipartUpload'
                 Resource: 
                   - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
+                  - !Sub 'arn:aws:s3:::${PdfDestinationBucketName}/*'
         - PolicyName: DigitizedImagePackagingSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -200,6 +204,8 @@ Resources:
               Value: !Sub '${EfsRootPath}/${TemporaryPath}'
             - Name: AWS_DESTINATION_BUCKET
               Value: !Ref DestinationBucketName
+            - Name: AWS_PDF_DESTINATION_BUCKET
+              Value: !Ref PdfDestinationBucketName
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn      
           MountPoints:
