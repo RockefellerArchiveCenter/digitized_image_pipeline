@@ -199,8 +199,8 @@ Resources:
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:username}}' ]]
       MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:password}}' ]]
       ServerlessV2ScalingConfiguration:
-        MaxCapacity: 32.0
-        MinCapacity: 8.0
+        MaxCapacity: 16.0
+        MinCapacity: 0.5
 
   PostgresDatabase:
     Type: AWS::RDS::DBInstance
