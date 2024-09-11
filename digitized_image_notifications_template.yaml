@@ -32,8 +32,6 @@ Resources:
             Action:
               - 'sts:AssumeRole'
       Description: !Sub 'Allows ${ApplicationName} lambda to be executed successfully.'
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: DigitizedImageParameterStorePolicy
           PolicyDocument:
@@ -43,6 +41,16 @@ Resources:
                 Action: 
                   - 'ssm:GetParametersByPath*'
                 Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}*'
+        - PolicyName: DigitizedImageLogPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !GetAtt HandleDigitizedImageNotificationsFunction.Arn
   
   DigitizedImageEventsTopic:
       Type: AWS::SNS::Topic
