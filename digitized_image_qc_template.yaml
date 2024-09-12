@@ -264,7 +264,7 @@ Resources:
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn
             - Name: AQUILA_BASEURL
-              Value: http://aquila.dev.rockarch.org
+              Value: http://aquila.rockarch.org
             - Name: SQL_ENGINE
               Value: django.db.backends.postgresql
             - Name: SQL_HOST
