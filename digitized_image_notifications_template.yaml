@@ -50,7 +50,8 @@ Resources:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
-                Resource: !GetAtt HandleDigitizedImageNotificationsFunction.Arn
+                Resource:
+                  - !GetAtt NotificationsLogGroup.Arn
   
   DigitizedImageEventsTopic:
       Type: AWS::SNS::Topic
@@ -94,7 +95,7 @@ Resources:
   NotificationsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${HandleDigitizedImageNotificationsFunction}"
+      LogGroupName: !Sub "/aws/lambda/${ApplicationName}"
       RetentionInDays: 90
   
   HandleDigitizedImageNotificationsFunctionDigitizedImageEventsPermission:
