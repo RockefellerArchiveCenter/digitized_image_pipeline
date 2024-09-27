@@ -159,6 +159,7 @@ Resources:
         ApplicationName: digitized_image_trigger
         ECSClusterName: !Ref DigitizedImageECSCluster
         ECSSubnetName: !FindInMap [DeployResources, Subnet, !Ref Environment]
+        ParentStackName: !Ref AWS::StackName
         
   # Validate ECS Task
   ValidateECSTask:

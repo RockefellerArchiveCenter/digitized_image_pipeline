@@ -20,6 +20,9 @@ Parameters:
   ECSSubnetName:
     Type: AWS::EC2::Subnet::Id
     Description: Name of the subnet in which the ECS Task should be triggered.
+  ParentStackName:
+    Type: String
+    Description: Name of the parent stack
 
 Resources:
   DigitizedImageTriggerFunctionRole:
@@ -51,7 +54,7 @@ Resources:
                 Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${ECSClusterName}/*'
               - Effect: Allow
                 Action: 'iam:PassRole'
-                Resource: '*'
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ParentStackName}-*'
                 Condition:
                   StringLike:
                     'iam:PassedToService': 'ecs-tasks.amazonaws.com'
