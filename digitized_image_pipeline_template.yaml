@@ -14,21 +14,26 @@ Mappings:
       prod: digitized_image_pipeline
     Vpc:
       dev: "vpc-01ff614b4bb3cbbe3"
+      prod: "vpc-0a5c0a6d0c14e0e89"
     SecurityGroup:
       dev: "sg-0f98d77d7bb7b4ce6"
-      prod: "sg-05ba511af720799b6"
+      prod: "sg-0a568e8a6ff39b710" 
     Subnet:
       dev: "subnet-098df07b0ab91cb1d"
-      prod: "subnet-0102189437e2babd8"
+      prod: "subnet-02e68cd17b1abfc14" 
     LoadBalancerSubnets:
       dev: "subnet-016449c4b44a0fc44,subnet-098df07b0ab91cb1d"
+      prod: "subnet-02e68cd17b1abfc14,subnet-0c0dff46b814206e8"
     TargetGroupArn:
       dev: "arn:aws:elasticloadbalancing:us-east-1:016161564811:targetgroup/load-b-Digit-A3QM8KDZHGJZ/3773af57ebe8b9c4"
-      prod: ""
+      prod: "arn:aws:elasticloadbalancing:us-east-1:817658541382:targetgroup/Digiti-Digit-UL5YASMMPJPL/06a6516420ea7524"
   Qc:
     HostName:
       dev: "digitized-image-qc.dev.rockarch.org"
       prod: "digitized-image-qc.rockarch.org"
+    DatabaseSubnetGroup:
+      dev: "default"
+      prod: "default-vpc-0a5c0a6d0c14e0e89"
   Package:
     DestinationBucket:
       dev: "rac-dev-zorya-staging"
@@ -205,6 +210,7 @@ Resources:
         ApplicationEnvironment: !Ref Environment
         ApplicationName: digitized_image_qc
         ApplicationHostName: !FindInMap [Qc, HostName, !Ref Environment]
+        DatabaseSubnetGroup: !FindInMap [Qc, DatabaseSubnetGroup, !Ref Environment]
         EcsClusterName: !Ref DigitizedImageECSCluster
         EfsId: !Ref TemporaryStorage
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
