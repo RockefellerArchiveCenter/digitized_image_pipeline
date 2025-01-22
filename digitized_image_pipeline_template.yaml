@@ -213,6 +213,7 @@ Resources:
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
         EfsRootPath: '/efs'
         StoragePath: 'qc'
+        DestinationPath: 'packaging'
         ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
@@ -239,7 +240,7 @@ Resources:
         EfsId: !Ref TemporaryStorage
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
         EfsRootPath: '/efs'
-        StoragePath: 'qc'
+        StoragePath: 'packaging'
         TemporaryPath: 'packaging_tmp'
         DestinationBucketName: !FindInMap [Package, DestinationBucket, !Ref Environment]
         PdfDestinationBucketName: !FindInMap [Package, PdfDestinationBucket, !Ref Environment]

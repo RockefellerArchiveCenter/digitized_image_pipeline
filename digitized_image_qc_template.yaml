@@ -39,6 +39,9 @@ Parameters:
   StoragePath:
     Type: String
     Description: Location in EFS mount at which source files are stored.
+  DestinationPath:
+    Type: String
+    Description: Location in EFS mount where files are moved after processing.
   ArchivesSpaceRepo:
     Type: String
     Description: ArchivesSpace repository identifier.
@@ -261,6 +264,8 @@ Resources:
               Value: !GetAtt DigitizedImageQcRole.Arn
             - Name: STORAGE_PATH
               Value: !Sub '${EfsRootPath}/${StoragePath}'
+            - Name: DESTINATION_PATH
+              Value: !Sub '${EfsRootPath}/${DestinationPath}'
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn
             - Name: AQUILA_BASEURL
