@@ -150,6 +150,7 @@ Resources:
       FunctionName: !Ref DigitizedImageTriggerFunction
       Principal: s3.amazonaws.com
       SourceArn: !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload
+      SourceAccount: !Ref AWS::AccountId
 
   # Allow SNS to trigger Lambda
   DigitizedImageTriggerSNSFunctionPermission:
