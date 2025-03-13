@@ -77,6 +77,8 @@ Resources:
         S3Key: !Sub '${ApplicationName}.zip'
       FunctionName: !Ref ApplicationName
       Handler: handle_digitized_image_notifications.lambda_handler
+      LoggingConfig:
+        LogGroup: !Ref NotificationsLogGroup
       Role: !GetAtt HandleDigitizedImageNotificationsRole.Arn
       Runtime: python3.11
       Timeout: 30

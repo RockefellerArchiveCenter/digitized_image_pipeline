@@ -119,6 +119,8 @@ Resources:
         S3Key: !Sub '${ApplicationName}.zip'
       FunctionName: !Ref ApplicationName
       Handler: handle_digitized_image_trigger.lambda_handler
+      LoggingConfig:
+        LogGroup: !Ref TriggerLogGroup
       Role: !GetAtt DigitizedImageTriggerFunctionRole.Arn
       Runtime: python3.11
       Timeout: 10
