@@ -48,6 +48,10 @@ Mappings:
     Username:
       dev: digitized-image
       prod: digitized-image
+  Aquila:
+    BaseUrl:
+      dev: "http://aquila.rockarch.org/api"
+      prod: "http://aquila.rockarch.org/api"
     
 
 Parameters:
@@ -248,3 +252,4 @@ Resources:
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
         ArchivesSpacePassword: !Ref ArchivesSpacePassword
+        AquilaBaseUrl: !FindInMap [Aquila, BaseUrl, !Ref Environment]
