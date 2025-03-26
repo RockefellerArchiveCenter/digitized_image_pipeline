@@ -138,7 +138,7 @@ Resources:
       Memory: "3072"
       ContainerDefinitions: 
         - Name: !Ref ApplicationName
-          Image: !Sub "${ContainerAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApplicationName}:latest"
+          Image: !Sub "${ContainerAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApplicationName}:${ApplicationEnvironment}"
           Essential: true
           Environment:
             - Name: AWS_ACCESS_KEY_ID

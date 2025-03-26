@@ -51,6 +51,9 @@ Parameters:
   ArchivesSpacePassword:
     Type: String
     Description: ArchivesSpace password.
+  AquilaBaseUrl:
+    Type: String
+    Description: Aquila base URL.
 
 Resources:  
   ArchivesSpaceRepoParameter:
@@ -93,6 +96,16 @@ Resources:
         Application: !Ref ApplicationName
       Type: String
       Value: !Ref ArchivesSpacePassword
+  AquilaBaseUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Aquila base URL.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/AQUILA_BASEURL
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+      Type: String
+      Value: !Ref AquilaBaseUrl
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
@@ -161,13 +174,24 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Effect: Allow
+              - Sid: ObjectPolicy
+                Effect: Allow
                 Action: 
+                  - 's3:GetObject'
                   - 's3:PutObject'
                   - 's3:CreateMultipartUpload'
                 Resource: 
                   - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
                   - !Sub 'arn:aws:s3:::${PdfDestinationBucketName}/*'
+                  - !Sub 'arn:aws:s3:::${EmbargoedDestinationBucket}/*'
+                  - !Sub 'arn:aws:s3:::${EmbargoedPdfDestinationBucket}/*'
+              - Sid: BucketPolicy
+                Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource:
+                  - !Sub 'arn:aws:s3:::${EmbargoedDestinationBucket}'
+                  - !Sub 'arn:aws:s3:::${EmbargoedPdfDestinationBucket}'
         - PolicyName: DigitizedImagePackagingSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -190,6 +214,26 @@ Resources:
     Properties: 
       LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
+
+  EmbargoedDestinationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-online-embargo
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  EmbargoedPdfDestinationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-online-embargo-pdf
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
   
   PackagingECSTask:
     Type: AWS::ECS::TaskDefinition
@@ -198,7 +242,7 @@ Resources:
       Memory: "3072"
       ContainerDefinitions: 
         - Name: !Ref ApplicationName
-          Image: !Sub "${ContainerAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApplicationName}:latest"
+          Image: !Sub "${ContainerAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApplicationName}:${ApplicationEnvironment}"
           Essential: true
           Environment:
             - Name: ENV
@@ -221,6 +265,10 @@ Resources:
               Value: !Ref DestinationBucketName
             - Name: AWS_PDF_DESTINATION_BUCKET
               Value: !Ref PdfDestinationBucketName
+            - Name: AWS_EMBARGOED_DESTINATION_BUCKET
+              Value: !Ref EmbargoedDestinationBucket
+            - Name: AWS_EMBARGOED_PDF_DESTINATION_BUCKET
+              Value: !Ref EmbargoedPdfDestinationBucket
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn      
           MountPoints:
