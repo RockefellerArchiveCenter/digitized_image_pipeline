@@ -96,7 +96,7 @@ Resources:
                 - !GetAtt DigitizedImageValidationUser.Arn
             Action:
               - 'sts:AssumeRole'
-      Description: !Sub 'Allows management of S3 assets and creation of SNS messages.'
+      Description: 'Allows management of S3 assets and creation of SNS messages.'
       Policies:
         - PolicyName: DigitizedImageValidationS3BucketPolicy
           PolicyDocument:
