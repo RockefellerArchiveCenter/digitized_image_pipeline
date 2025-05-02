@@ -168,7 +168,7 @@ Resources:
                 - !GetAtt DigitizedImagePackagingUser.Arn
             Action:
               - 'sts:AssumeRole'
-      Description: !Sub 'Allows management of S3 assets and creation of SNS messages.'
+      Description: 'Allows management of S3 assets and creation of SNS messages.'
       Policies:
         - PolicyName: DigitizedImagePackagingS3ObjectPolicy
           PolicyDocument:
@@ -179,7 +179,6 @@ Resources:
                 Action: 
                   - 's3:GetObject'
                   - 's3:PutObject'
-                  - 's3:CreateMultipartUpload'
                 Resource: 
                   - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
                   - !Sub 'arn:aws:s3:::${PdfDestinationBucketName}/*'
