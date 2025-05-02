@@ -176,7 +176,7 @@ Resources:
                 - !GetAtt DigitizedImageQcUser.Arn
             Action:
               - 'sts:AssumeRole'
-      Description: !Sub 'Allows creation of SNS messages.'
+      Description: 'Allows creation of SNS messages.'
       Policies:
         - PolicyName: DigitizedImageQcSNSPolicy
           PolicyDocument:
@@ -227,7 +227,7 @@ Resources:
       DBInstanceClass: db.serverless
       DBClusterIdentifier: !Ref DBCluster
       Engine: aurora-postgresql
-      EngineVersion: '15.2'
+      EngineVersion: '15.8'
       PubliclyAccessible: false
 
   QcLogGroup:

@@ -25,6 +25,20 @@ Parameters:
     Description: Name of the parent stack
 
 Resources:
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub rac-${ApplicationEnvironment}-image-upload
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Function: !GetAtt DigitizedImageTriggerFunction.Arn
+            Event: 's3:ObjectCreated:*'
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
   DigitizedImageTriggerFunctionRole:
     Type: AWS::IAM::Role
     Properties:
