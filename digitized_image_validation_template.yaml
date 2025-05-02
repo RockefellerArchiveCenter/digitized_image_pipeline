@@ -106,7 +106,7 @@ Resources:
                 Action: 
                   - 's3:ListBucket'
                 Resource: 
-                  - !GetAtt UploadBucket.Arn
+                  - !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload
         - PolicyName: DigitizedImageValidationS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -116,7 +116,7 @@ Resources:
                   - 's3:GetObject'
                   - 's3:DeleteObject'
                 Resource: 
-                  - !Sub '${UploadBucket.Arn}/*'
+                  - !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload/*
         - PolicyName: DigitizedImageValidationSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -186,25 +186,8 @@ Resources:
             AuthorizationConfig:
               AccessPointId: !Ref EfsAccessPointId
               IAM: DISABLED
-  
-  UploadBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub rac-${ApplicationEnvironment}-image-upload
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Function: !ImportValue DigitizedImage-TriggerArn
-            Event: 's3:ObjectCreated:*'
-      PublicAccessBlockConfiguration: 
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
 
 Outputs:
   ValidationECSTask:
     Description: "Validation ECS Task Definition ARN"
     Value: !Ref ValidationECSTask
-  UploadBucket:
-    Description: "Upload S3 bucket ARN"
-    Value: !GetAtt UploadBucket.Arn
