@@ -38,6 +38,30 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+  
+  UploadBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UploadBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: s3:ListBucket
+            Resource: !GetAtt UploadBucket.Arn
+            Principal:
+              AWS:
+                - 'arn:aws:iam::562779183889:user/rac-upload-user' # Crowley
+                - 'arn:aws:iam::034638293334:user/NEDCC-Imaging' # NEDCC
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub 'arn:aws:s3:::${UploadBucket}/*'
+            Principal:
+              AWS:
+                - 'arn:aws:iam::562779183889:user/rac-upload-user' # Crowley
+                - 'arn:aws:iam::034638293334:user/NEDCC-Imaging' # NEDCC
 
   DigitizedImageTriggerFunctionRole:
     Type: AWS::IAM::Role
