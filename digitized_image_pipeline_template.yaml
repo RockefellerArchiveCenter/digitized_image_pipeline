@@ -212,6 +212,7 @@ Resources:
         ]
       Parameters:
         SubnetId: !FindInMap [DeployResources, Subnet, !Ref Environment]
+        SecurityGroupId: !FindInMap [DeployResources, EcsSecurityGroup, !Ref Environment]
         ApplicationEnvironment: !Ref Environment
         ApplicationName: digitized_image_qc
         ApplicationHostName: !FindInMap [Qc, HostName, !Ref Environment]

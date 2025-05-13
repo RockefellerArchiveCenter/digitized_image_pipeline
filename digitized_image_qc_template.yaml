@@ -36,6 +36,9 @@ Parameters:
   SubnetId:
     Type: AWS::EC2::Subnet::Id
     Description: Subnet in which service should run.
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group for service.
   StoragePath:
     Type: String
     Description: Location in EFS mount at which source files are stored.
@@ -324,6 +327,8 @@ Resources:
           AssignPublicIp: DISABLED
           Subnets:
             - !Ref SubnetId
+          SecurityGroups:
+            - !Ref SecurityGroupId
       LoadBalancers:
         - TargetGroupArn: !Ref TargetGroupArn
           ContainerPort: 80
