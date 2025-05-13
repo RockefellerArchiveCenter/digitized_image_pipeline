@@ -223,6 +223,8 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MaxCapacity: 16.0
         MinCapacity: 0.5
+      VpcSecurityGroupIds:
+        - !Ref SecurityGroupId
 
   PostgresDatabase:
     Type: AWS::RDS::DBInstance
