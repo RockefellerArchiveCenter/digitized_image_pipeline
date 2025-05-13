@@ -17,10 +17,13 @@ Mappings:
       prod: "vpc-0a5c0a6d0c14e0e89"
     SecurityGroup:
       dev: "sg-0f98d77d7bb7b4ce6"
-      prod: "sg-0a568e8a6ff39b710" 
+      prod: "sg-0a568e8a6ff39b710"
+    EcsSecurityGroup:
+      dev: sg-0f98d77d7bb7b4ce6
+      prod: sg-001d3c3a6ebf7b28a
     Subnet:
       dev: "subnet-098df07b0ab91cb1d"
-      prod: "subnet-0102189437e2babd8" 
+      prod: "subnet-0102189437e2babd8"
     TargetGroupArn:
       dev: "arn:aws:elasticloadbalancing:us-east-1:016161564811:targetgroup/load-b-Digit-A3QM8KDZHGJZ/3773af57ebe8b9c4"
       prod: "arn:aws:elasticloadbalancing:us-east-1:817658541382:targetgroup/Digiti-Digit-UL5YASMMPJPL/06a6516420ea7524"
@@ -165,6 +168,7 @@ Resources:
         ApplicationName: digitized_image_trigger
         ECSClusterName: !Ref DigitizedImageECSCluster
         ECSSubnetName: !FindInMap [DeployResources, Subnet, !Ref Environment]
+        ECSSecurityGroupName: !FindInMap [DeployResources, EcsSecurityGroup, !Ref Environment]
         ParentStackName: !Ref AWS::StackName
         
   # Validate ECS Task
