@@ -20,6 +20,9 @@ Parameters:
   ECSSubnetName:
     Type: AWS::EC2::Subnet::Id
     Description: Name of the subnet in which the ECS Task should be triggered.
+  ECSSecurityGroupName:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Name of the security group to use for the task.
   ParentStackName:
     Type: String
     Description: Name of the parent stack
@@ -137,6 +140,17 @@ Resources:
         Application: !Ref ApplicationName
       Type: String
       Value: !Ref ECSSubnetName
+  ECSSecurityGroupParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      AllowedPattern: "^[A-Za-z0-9\\-\\_]+$"
+      Description: Security group for the task.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/ECS_SECURITY_GROUP
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+      Type: String
+      Value: !Ref ECSSecurityGroupName
   QCECSServiceParam:
     Type: AWS::SSM::Parameter
     Properties: 
