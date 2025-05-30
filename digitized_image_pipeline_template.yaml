@@ -36,7 +36,7 @@ Mappings:
       prod: "default-vpc-0a5c0a6d0c14e0e89"
   Package:
     DestinationBucket:
-      dev: "rac-dev-zorya-staging"
+      dev: "rac-dev-digital-ingest-upload"
       prod: "rac-zorya-staging"
     PdfDestinationBucket:
       dev: "raciif-dev"
