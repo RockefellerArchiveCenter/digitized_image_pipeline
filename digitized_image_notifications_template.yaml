@@ -17,11 +17,21 @@ Parameters:
   TeamsUrl:
     Type: String
     Description: URL for a Teams channel webhook.
+  Workload:
+    Type: String
+    Description: Name of workload for this stack.
 
 Resources:
   HandleDigitizedImageNotificationsRole:
     Type: AWS::IAM::Role
     Properties: 
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -57,6 +67,13 @@ Resources:
       Type: AWS::SNS::Topic
       Properties:
         TopicName: digitized-image-events
+        Tags:
+          - Key: Environment
+            Value: !Ref ApplicationEnvironment
+          - Key: Application
+            Value: !Ref ApplicationName
+          - Key: Workload
+            Value: !Ref Workload
 
   TeamsUrlParameter:
     Type: AWS::SSM::Parameter
@@ -66,6 +83,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref TeamsUrl
 
@@ -91,12 +109,21 @@ Resources:
           Value: !Ref ApplicationEnvironment
         - Key: Application
           Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       Architectures:
         - x86_64
 
   NotificationsLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       LogGroupName: !Sub "/aws/lambda/${ApplicationName}"
       RetentionInDays: 90
   
