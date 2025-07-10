@@ -75,6 +75,9 @@ Parameters:
   DatabaseSubnetGroup:
     Type: String
     Description: Database subnet group for cluster and instance.
+  Workload:
+    Type: String
+    Description: Name of workload for this stack.
 
 Resources:  
   ArchivesSpaceRepoParameter:
@@ -85,6 +88,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpaceRepo
   ArchivesSpaceBaseUrlParameter:
@@ -95,6 +99,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpaceBaseUrl
   ArchivesSpaceUsernameParameter:
@@ -105,6 +110,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpaceUsername
   ArchivesSpacePasswordParameter:
@@ -115,12 +121,20 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpacePassword
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -160,6 +174,14 @@ Resources:
 
   DigitizedImageQcUser:
     Type: AWS::IAM::User
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
 
   DigitizedImageQcUserAccessKey:
     Type: AWS::IAM::AccessKey
@@ -168,7 +190,14 @@ Resources:
 
   DigitizedImageQcRole:
     Type: AWS::IAM::Role
-    Properties: 
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       RoleName: digitized-image-qc-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -201,6 +230,13 @@ Resources:
   DBSecrets:
     Type: AWS::SecretsManager::Secret
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       Description: 'Secrets for RDS instance'
       GenerateSecretString:
         SecretStringTemplate: '{"username": "digitizedimageqcuser"}'
@@ -213,6 +249,13 @@ Resources:
     DeletionPolicy: Snapshot
     UpdateReplacePolicy: Snapshot
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       DatabaseName: !Ref SqlDatabaseName
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       Engine: aurora-postgresql
@@ -229,6 +272,13 @@ Resources:
   PostgresDatabase:
     Type: AWS::RDS::DBInstance
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       DBInstanceClass: db.serverless
       DBClusterIdentifier: !Ref DBCluster
       Engine: aurora-postgresql
@@ -238,6 +288,13 @@ Resources:
   QcLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
   
@@ -307,6 +364,13 @@ Resources:
       RuntimePlatform:
         CpuArchitecture: X86_64
         OperatingSystemFamily: LINUX
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       Volumes: 
         - Name: efs
           EFSVolumeConfiguration:
@@ -323,6 +387,13 @@ Resources:
       Cluster: !Ref EcsClusterName
       LaunchType: FARGATE
       DesiredCount: 0
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       TaskDefinition: !Ref QcECSTask
       NetworkConfiguration:
         AwsvpcConfiguration:

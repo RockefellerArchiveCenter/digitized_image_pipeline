@@ -33,11 +33,21 @@ Parameters:
   DestinationPath:
     Type: String
     Description: Destination storage path to which valid files are moved after processing.
+  Workload:
+    Type: String
+    Description: Name of workload for this stack.
 
 Resources:
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -78,6 +88,14 @@ Resources:
 
   DigitizedImageValidationUser:
     Type: AWS::IAM::User
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
 
   DigitizedImageValidationUserAccessKey:
     Type: AWS::IAM::AccessKey
@@ -87,6 +105,13 @@ Resources:
   DigitizedImageValidationRole:
     Type: AWS::IAM::Role
     Properties: 
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -130,6 +155,13 @@ Resources:
     Properties: 
       LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
 
   ValidationECSTask:
     Type: AWS::ECS::TaskDefinition
@@ -177,6 +209,13 @@ Resources:
       RuntimePlatform:
         CpuArchitecture: X86_64
         OperatingSystemFamily: LINUX
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       Volumes: 
         - Name: efs
           EFSVolumeConfiguration:
