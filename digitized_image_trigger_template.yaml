@@ -26,11 +26,21 @@ Parameters:
   ParentStackName:
     Type: String
     Description: Name of the parent stack
+  Workload:
+    Type: String
+    Description: Name of workload for this stack.
 
 Resources:
   UploadBucket:
     Type: AWS::S3::Bucket
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       BucketName: !Sub rac-${ApplicationEnvironment}-image-upload
       NotificationConfiguration:
         LambdaConfigurations:
@@ -69,6 +79,13 @@ Resources:
   DigitizedImageTriggerFunctionRole:
     Type: AWS::IAM::Role
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -127,6 +144,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ECSClusterName
   ECSSubnetParam:
@@ -138,6 +156,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ECSSubnetName
   ECSSecurityGroupParam:
@@ -149,6 +168,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ECSSecurityGroupName
   QCECSServiceParam:
@@ -160,6 +180,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !ImportValue DigitizedImage-QcEcsServiceName
 
@@ -189,12 +210,21 @@ Resources:
           Value: !Ref ApplicationEnvironment
         - Key: Application
           Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
 
   TriggerLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ApplicationName}"
       RetentionInDays: 90
+      Tags: 
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
 
   # Allow S3 to trigger Lambda
   DigitizedImageTriggerS3FunctionPermission:

@@ -71,6 +71,10 @@ Parameters:
   ArchivesSpacePassword:
     Type: String
     Description: ArchivesSpace password.
+  Workload:
+    Type: String
+    Default: digitized_image_pipeline
+    Description: Name of workload for this stack.
 
 Resources:
   # Temporary Storage
@@ -83,6 +87,8 @@ Resources:
           Value: !Ref Environment
         - Key: Application
           Value: digitized-image-temporary-storage
+        - Key: Workload
+          Value: !Ref Workload
       LifecyclePolicies: 
         - TransitionToIA: AFTER_30_DAYS
       PerformanceMode: generalPurpose
@@ -105,6 +111,8 @@ Resources:
           Value: !Ref Environment
         - Key: Application
           Value: digitized-image-temporary-storage
+        - Key: Workload
+          Value: !Ref Workload
       FileSystemId: !Ref TemporaryStorage
       PosixUser:
         Uid: "1000"
@@ -128,6 +136,8 @@ Resources:
           Value: !Ref Environment
         - Key: Application
           Value: digitized-image-ecs-cluster
+        - Key: Workload
+          Value: !Ref Workload
 
   # Notifications Lambda
   NotificationsLambda:
@@ -146,6 +156,7 @@ Resources:
         ApplicationEnvironment: !Ref Environment
         ApplicationName: digitized_image_notifications
         TeamsUrl: !Ref TeamsUrl
+        Workload: !Ref Workload
 
   # Trigger Lambda
   TriggerLambda:
@@ -170,6 +181,7 @@ Resources:
         ECSSubnetName: !FindInMap [DeployResources, Subnet, !Ref Environment]
         ECSSecurityGroupName: !FindInMap [DeployResources, EcsSecurityGroup, !Ref Environment]
         ParentStackName: !Ref AWS::StackName
+        Workload: !Ref Workload
         
   # Validate ECS Task
   ValidateECSTask:
@@ -195,6 +207,7 @@ Resources:
         EfsRootPath: '/efs'
         StoragePath: 'validate'
         DestinationPath: 'qc'
+        Workload: !Ref Workload
 
   # QC web application
   QCWebApplication:
@@ -228,6 +241,7 @@ Resources:
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
         ArchivesSpacePassword: !Ref ArchivesSpacePassword
         TargetGroupArn: !FindInMap [DeployResources, TargetGroupArn, !Ref Environment]
+        Workload: !Ref Workload
   
   # Package ECS Task
   PackageECSTask:
@@ -258,3 +272,4 @@ Resources:
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
         ArchivesSpacePassword: !Ref ArchivesSpacePassword
         AquilaBaseUrl: !FindInMap [Aquila, BaseUrl, !Ref Environment]
+        Workload: !Ref Workload

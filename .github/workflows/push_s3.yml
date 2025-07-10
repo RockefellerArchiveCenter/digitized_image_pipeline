@@ -27,8 +27,5 @@ jobs:
       - name: Sync to AWS
         run: |
           aws s3 sync . s3://${{ secrets.S3_BUCKET_NAME }}/digitized_image_pipeline \
-            --exclude '.git/*' \
-            --exclude '.github/*' \
-            --exclude 'README.md' \
-            --exclude 'LICENSE' \
-            --exclude '.DS_Store'
+            --exclude "*" \
+            --include "*.yaml"

@@ -54,6 +54,9 @@ Parameters:
   AquilaBaseUrl:
     Type: String
     Description: Aquila base URL.
+  Workload:
+    Type: String
+    Description: Name of workload for this stack.
 
 Resources:  
   ArchivesSpaceRepoParameter:
@@ -64,6 +67,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpaceRepo
   ArchivesSpaceBaseUrlParameter:
@@ -74,6 +78,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpaceBaseUrl
   ArchivesSpaceUsernameParameter:
@@ -84,6 +89,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpaceUsername
   ArchivesSpacePasswordParameter:
@@ -94,6 +100,7 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref ArchivesSpacePassword
   AquilaBaseUrlParameter:
@@ -104,12 +111,20 @@ Resources:
       Tags: 
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
+        Workload: !Ref Workload
       Type: String
       Value: !Ref AquilaBaseUrl
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -149,6 +164,14 @@ Resources:
 
   DigitizedImagePackagingUser:
     Type: AWS::IAM::User
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
 
   DigitizedImagePackagingUserAccessKey:
     Type: AWS::IAM::AccessKey
@@ -158,6 +181,13 @@ Resources:
   DigitizedImagePackagingRole:
     Type: AWS::IAM::Role
     Properties: 
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       RoleName: digitized-image-packaging-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -211,12 +241,26 @@ Resources:
   PackagingLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
 
   EmbargoedDestinationBucket:
     Type: AWS::S3::Bucket
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       BucketName: !Sub rac-${ApplicationEnvironment}-image-online-embargo
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
@@ -227,6 +271,13 @@ Resources:
   EmbargoedPdfDestinationBucket:
     Type: AWS::S3::Bucket
     Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       BucketName: !Sub rac-${ApplicationEnvironment}-image-online-embargo-pdf
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
@@ -288,6 +339,13 @@ Resources:
       RuntimePlatform:
         CpuArchitecture: X86_64
         OperatingSystemFamily: LINUX
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
       Volumes: 
         - Name: efs
           EFSVolumeConfiguration:
