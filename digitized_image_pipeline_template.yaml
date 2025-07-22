@@ -37,7 +37,7 @@ Mappings:
   Package:
     DestinationBucket:
       dev: "rac-dev-digital-ingest-upload"
-      prod: "rac-zorya-staging"
+      prod: "rac-prod-digital-ingest-upload"
     PdfDestinationBucket:
       dev: "raciif-dev"
       prod: "raciiif-prod"
