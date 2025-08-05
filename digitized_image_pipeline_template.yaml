@@ -77,6 +77,24 @@ Parameters:
     Description: Name of workload for this stack.
 
 Resources:
+  # QC Bucket
+  QcBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: digitized-image-qc
+        - Key: Workload
+          Value: !Ref Workload
+      BucketName: !Sub rac-${Environment}-image-qc
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
   # Temporary Storage
   TemporaryStorage:
     Type: AWS::EFS::FileSystem
@@ -206,7 +224,7 @@ Resources:
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
         EfsRootPath: '/efs'
         StoragePath: 'validate'
-        DestinationPath: 'qc'
+        DestinationBucketName: !Ref QcBucket
         Workload: !Ref Workload
 
   # QC web application
@@ -231,11 +249,7 @@ Resources:
         ApplicationHostName: !FindInMap [Qc, HostName, !Ref Environment]
         DatabaseSubnetGroup: !FindInMap [Qc, DatabaseSubnetGroup, !Ref Environment]
         EcsClusterName: !Ref DigitizedImageECSCluster
-        EfsId: !Ref TemporaryStorage
-        EfsAccessPointId: !Ref TemporaryStorageAccessPoint
-        EfsRootPath: '/efs'
-        StoragePath: 'qc'
-        DestinationPath: 'packaging'
+        SourceBucketName: !Ref QcBucket
         ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
@@ -263,7 +277,7 @@ Resources:
         EfsId: !Ref TemporaryStorage
         EfsAccessPointId: !Ref TemporaryStorageAccessPoint
         EfsRootPath: '/efs'
-        StoragePath: 'packaging'
+        SourceBucketName: !Ref QcBucket
         TemporaryPath: 'packaging_tmp'
         DestinationBucketName: !FindInMap [Package, DestinationBucket, !Ref Environment]
         PdfDestinationBucketName: !FindInMap [Package, PdfDestinationBucket, !Ref Environment]
