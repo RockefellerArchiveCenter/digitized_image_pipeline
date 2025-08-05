@@ -27,9 +27,9 @@ Parameters:
   EfsRootPath:
     Type: String
     Description: Root path at which EFS is mounted.
-  StoragePath:
+  SourceBucketName:
     Type: String
-    Description: Location in EFS mount at which source files are stored.
+    Description: Name of bucket in which which source files are stored.
   TemporaryPath:
     Type: String
     Description: Location in EFS mount at which files are unpacked.
@@ -209,7 +209,9 @@ Resources:
                 Action: 
                   - 's3:GetObject'
                   - 's3:PutObject'
+                  - 's3:DeleteObject'
                 Resource: 
+                  - !Sub 'arn:aws:s3:::${SourceBucketName}/*'
                   - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
                   - !Sub 'arn:aws:s3:::${PdfDestinationBucketName}/*'
                   - !Sub 'arn:aws:s3:::${EmbargoedDestinationBucket}/*'
@@ -307,8 +309,8 @@ Resources:
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
               Value: !GetAtt DigitizedImagePackagingRole.Arn
-            - Name: SOURCE_DIR
-              Value: !Sub '${EfsRootPath}/${StoragePath}'
+            - Name: AWS_S3_BUCKET
+              Value: !Ref SourceBucketName
             - Name: TMP_DIR
               Value: !Sub '${EfsRootPath}/${TemporaryPath}'
             - Name: AWS_DESTINATION_BUCKET
