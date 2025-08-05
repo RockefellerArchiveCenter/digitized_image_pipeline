@@ -30,9 +30,9 @@ Parameters:
   StoragePath:
     Type: String
     Description: Temporary storage path into which files are moved during processing.
-  DestinationPath:
+  DestinationBucketName:
     Type: String
-    Description: Destination storage path to which valid files are moved after processing.
+    Description: Name of bucket to which valid files are moved after processing.
   Workload:
     Type: String
     Description: Name of workload for this stack.
@@ -85,7 +85,6 @@ Resources:
                   - 'ecr:GetAuthorizationToken'
                 Resource: "*"
 
-
   DigitizedImageValidationUser:
     Type: AWS::IAM::User
     Properties:
@@ -102,7 +101,7 @@ Resources:
     Properties: 
       UserName: !Ref DigitizedImageValidationUser
 
-  DigitizedImageValidationRole:
+  DigitizedImageValidationS3Role:
     Type: AWS::IAM::Role
     Properties: 
       Tags:
@@ -121,7 +120,7 @@ Resources:
                 - !GetAtt DigitizedImageValidationUser.Arn
             Action:
               - 'sts:AssumeRole'
-      Description: 'Allows management of S3 assets and creation of SNS messages.'
+      Description: 'Allows management of S3 assets.'
       Policies:
         - PolicyName: DigitizedImageValidationS3BucketPolicy
           PolicyDocument:
@@ -132,6 +131,7 @@ Resources:
                   - 's3:ListBucket'
                 Resource: 
                   - !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload
+                  - !Sub arn:aws:s3:::${DestinationBucketName}
         - PolicyName: DigitizedImageValidationS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -142,6 +142,29 @@ Resources:
                   - 's3:DeleteObject'
                 Resource: 
                   - !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload/*
+                  - !Sub arn:aws:s3:::${DestinationBucketName}
+  
+  DigitizedImageValidationSnsRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: 
+              AWS:
+                - !GetAtt DigitizedImageValidationUser.Arn
+            Action:
+              - 'sts:AssumeRole'
+      Description: 'Allows creation of SNS messages.'
+      Policies:      
         - PolicyName: DigitizedImageValidationSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -177,16 +200,18 @@ Resources:
               Value: !Ref DigitizedImageValidationUserAccessKey
             - Name: AWS_SECRET_ACCESS_KEY
               Value: !GetAtt DigitizedImageValidationUserAccessKey.SecretAccessKey
-            - Name: AWS_ROLE_ARN
-              Value: !GetAtt DigitizedImageValidationRole.Arn
+            - Name: AWS_S3_ROLE_ARN
+              Value: !GetAtt DigitizedImageValidationS3Role.Arn
+            - Name: AWS_SNS_ROLE_ARN
+              Value: !GetAtt DigitizedImageValidationSnsRole.Arn
             - Name: ENV
               Value: !Ref ApplicationEnvironment
             - Name: APP_CONFIG_PATH
               Value: !Ref ApplicationName
             - Name: TMP_DIR
               Value: !Sub '${EfsRootPath}/${StoragePath}'
-            - Name: DESTINATION_DIR
-              Value: !Sub '${EfsRootPath}/${DestinationPath}'
+            - Name: DESTINATION_BUCKET
+              Value: !Ref DestinationBucketName
             - Name: AWS_REGION_NAME
               Value: !Ref AWS::Region
             - Name: AWS_SNS_TOPIC
