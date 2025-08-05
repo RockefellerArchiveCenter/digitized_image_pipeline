@@ -105,10 +105,10 @@ Resources:
                 Action: 'ecs:RunTask'
                 Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/digitized_image_*'
               - Effect: Allow
-                Action: 'ecs:DescribeServices'
-                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${ECSClusterName}/*'
-              - Effect: Allow
-                Action: 'ecs:UpdateService'
+                Action: 
+                  - 'ecs:DescribeServices'
+                  - 'ecs:UpdateService'
+                  - 'ecs:ExecuteCommand'
                 Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${ECSClusterName}/*'
               - Effect: Allow
                 Action: 'iam:PassRole'
@@ -116,6 +116,14 @@ Resources:
                 Condition:
                   StringLike:
                     'iam:PassedToService': 'ecs-tasks.amazonaws.com'
+              - Effect: Allow
+                Action: 'ecs:ListTasks'
+                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:container/*'
+                Condition: 
+                  ArnEquals:
+                    'ecs:cluster': !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSClusterName}'
+
+
         - PolicyName: DigitizedImageParameterStorePolicy
           PolicyDocument:
             Version: '2012-10-17'
