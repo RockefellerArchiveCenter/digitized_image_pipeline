@@ -24,15 +24,6 @@ Parameters:
   EcsClusterName:
     Type: String
     Description: Name of the ECS Cluster in which service should be deployed.
-  EfsId:
-    Type: String
-    Description: Identifier for temporary storage EFS.
-  EfsAccessPointId:
-    Type: String
-    Description: Identifier for temporary storage EFS access point.
-  EfsRootPath:
-    Type: String
-    Description: Root path at which EFS is mounted.
   SubnetId:
     Type: AWS::EC2::Subnet::Id
     Description: Subnet in which service should run.
@@ -42,9 +33,6 @@ Parameters:
   SourceBucketName:
     Type: String
     Description: Name of bucket in which source files are stored.
-  DestinationPath:
-    Type: String
-    Description: Location in EFS mount where files are moved after processing.
   ArchivesSpaceRepo:
     Type: String
     Description: ArchivesSpace repository identifier.
@@ -385,8 +373,6 @@ Resources:
               Value: !GetAtt DigitizedImageQcRole.Arn
             - Name: AWS_S3_Bucket
               Value: !Ref SourceBucketName
-            - Name: DESTINATION_PATH
-              Value: !Sub '${EfsRootPath}/${DestinationPath}'
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn
             - Name: AQUILA_BASEURL
@@ -403,10 +389,6 @@ Resources:
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:username}}' ]]
             - Name: SQL_DB_PASSWORD
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:password}}' ]]
-          MountPoints:
-            - SourceVolume: efs
-              ContainerPath: !Ref EfsRootPath
-              ReadOnly: false
           PortMappings:
             - ContainerPort: 80
           LinuxParameters:
@@ -433,15 +415,6 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
-      Volumes: 
-        - Name: efs
-          EFSVolumeConfiguration:
-            FilesystemId: !Ref EfsId
-            RootDirectory: /
-            TransitEncryption: ENABLED
-            AuthorizationConfig:
-              AccessPointId: !Ref EfsAccessPointId
-              IAM: DISABLED
 
   QcECSService:
     Type: AWS::ECS::Service
