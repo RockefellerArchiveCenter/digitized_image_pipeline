@@ -226,6 +226,24 @@ Resources:
     Properties: 
       UserName: !Ref DigitizedImageQcUser
 
+  DigitizedImageQcUserPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: S3Policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+          - Effect: Allow
+            Action:
+              - 's3:ListBucket'
+            Resource: !Sub 'arn:aws:s3:::${SourceBucketName}'
+      Users:
+        - !Ref DigitizedImageQcUser
+
   DigitizedImageQcRole:
     Type: AWS::IAM::Role
     Properties:
