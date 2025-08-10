@@ -282,7 +282,7 @@ Resources:
                   - 'ssm:GetParametersByPath'
                 Resource:
                   - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}
-        - PolicyName: DigitizedImageQcS3Policy
+        - PolicyName: DigitizedImageQcS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -291,6 +291,14 @@ Resources:
                   - 's3:GetObject'
                   - 's3:DeleteObject'
                 Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+        - PolicyName: DigitizedImageQcS3BucketPolicy
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${SourceBucketName}'
   
   DBSecrets:
     Type: AWS::SecretsManager::Secret
@@ -389,7 +397,7 @@ Resources:
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
               Value: !GetAtt DigitizedImageQcRole.Arn
-            - Name: AWS_S3_Bucket
+            - Name: AWS_S3_BUCKET
               Value: !Ref SourceBucketName
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn

@@ -140,9 +140,10 @@ Resources:
                 Action: 
                   - 's3:GetObject'
                   - 's3:DeleteObject'
+                  - 's3:PutObject'
                 Resource: 
                   - !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload/*
-                  - !Sub arn:aws:s3:::${DestinationBucketName}
+                  - !Sub arn:aws:s3:::${DestinationBucketName}/*
   
   DigitizedImageValidationSnsRole:
     Type: AWS::IAM::Role

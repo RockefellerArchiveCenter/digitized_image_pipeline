@@ -221,6 +221,7 @@ Resources:
                 Action:
                   - 's3:ListBucket'
                 Resource:
+                  - !Sub 'arn:aws:s3:::${SourceBucketName}'
                   - !Sub 'arn:aws:s3:::${EmbargoedDestinationBucket}'
                   - !Sub 'arn:aws:s3:::${EmbargoedPdfDestinationBucket}'
         - PolicyName: DigitizedImagePackagingSNSPolicy
@@ -309,7 +310,7 @@ Resources:
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
               Value: !GetAtt DigitizedImagePackagingRole.Arn
-            - Name: AWS_S3_BUCKET
+            - Name: AWS_SOURCE_BUCKET
               Value: !Ref SourceBucketName
             - Name: TMP_DIR
               Value: !Sub '${EfsRootPath}/${TemporaryPath}'

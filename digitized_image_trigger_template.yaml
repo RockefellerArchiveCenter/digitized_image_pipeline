@@ -108,7 +108,6 @@ Resources:
                 Action: 
                   - 'ecs:DescribeServices'
                   - 'ecs:UpdateService'
-                  - 'ecs:ExecuteCommand'
                 Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${ECSClusterName}/*'
               - Effect: Allow
                 Action: 'iam:PassRole'
@@ -117,13 +116,14 @@ Resources:
                   StringLike:
                     'iam:PassedToService': 'ecs-tasks.amazonaws.com'
               - Effect: Allow
-                Action: 'ecs:ListTasks'
-                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:container/*'
-                Condition: 
-                  ArnEquals:
-                    'ecs:cluster': !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSClusterName}'
-
-
+                Action: 
+                  - 'ecs:ListTasks'
+                Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:container-instance/${ECSClusterName}/*'
+              - Effect: Allow
+                Action: 'ecs:ExecuteCommand'
+                Resource: 
+                  - !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ECSClusterName}
+                  - !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/${ECSClusterName}/*
         - PolicyName: DigitizedImageParameterStorePolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -204,7 +204,7 @@ Resources:
         LogGroup: !Ref TriggerLogGroup
       Role: !GetAtt DigitizedImageTriggerFunctionRole.Arn
       Runtime: python3.11
-      Timeout: 10
+      Timeout: 120
       Environment:
         Variables:
           ENV:
