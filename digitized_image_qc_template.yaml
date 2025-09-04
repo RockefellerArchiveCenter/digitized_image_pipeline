@@ -24,27 +24,15 @@ Parameters:
   EcsClusterName:
     Type: String
     Description: Name of the ECS Cluster in which service should be deployed.
-  EfsId:
-    Type: String
-    Description: Identifier for temporary storage EFS.
-  EfsAccessPointId:
-    Type: String
-    Description: Identifier for temporary storage EFS access point.
-  EfsRootPath:
-    Type: String
-    Description: Root path at which EFS is mounted.
   SubnetId:
     Type: AWS::EC2::Subnet::Id
     Description: Subnet in which service should run.
   SecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Security group for service.
-  StoragePath:
+  SourceBucketName:
     Type: String
-    Description: Location in EFS mount at which source files are stored.
-  DestinationPath:
-    Type: String
-    Description: Location in EFS mount where files are moved after processing.
+    Description: Name of bucket in which source files are stored.
   ArchivesSpaceRepo:
     Type: String
     Description: ArchivesSpace repository identifier.
@@ -172,6 +160,56 @@ Resources:
                   - 'ecr:GetAuthorizationToken'
                 Resource: "*"
 
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref ApplicationEnvironment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Workload
+          Value: !Ref Workload
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: DescribeLogPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:DescribeLogGroups'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+        - PolicyName: LogEventPolicy
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/ecs/${EcsClusterName}:*'
+        - PolicyName: SSMPolicy
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssmmessages:CreateControlChannel'
+                  - 'ssmmessages:CreateDataChannel'
+                  - 'ssmmessages:OpenControlChannel'
+                  - 'ssmmessages:OpenDataChannel'
+                Resource: '*'
+
   DigitizedImageQcUser:
     Type: AWS::IAM::User
     Properties:
@@ -187,6 +225,24 @@ Resources:
     Type: AWS::IAM::AccessKey
     Properties: 
       UserName: !Ref DigitizedImageQcUser
+
+  DigitizedImageQcUserPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: S3Policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+          - Effect: Allow
+            Action:
+              - 's3:ListBucket'
+            Resource: !Sub 'arn:aws:s3:::${SourceBucketName}'
+      Users:
+        - !Ref DigitizedImageQcUser
 
   DigitizedImageQcRole:
     Type: AWS::IAM::Role
@@ -226,6 +282,23 @@ Resources:
                   - 'ssm:GetParametersByPath'
                 Resource:
                   - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}
+        - PolicyName: DigitizedImageQcS3ObjectPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:DeleteObject'
+                Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+        - PolicyName: DigitizedImageQcS3BucketPolicy
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${SourceBucketName}'
   
   DBSecrets:
     Type: AWS::SecretsManager::Secret
@@ -324,10 +397,8 @@ Resources:
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
               Value: !GetAtt DigitizedImageQcRole.Arn
-            - Name: STORAGE_PATH
-              Value: !Sub '${EfsRootPath}/${StoragePath}'
-            - Name: DESTINATION_PATH
-              Value: !Sub '${EfsRootPath}/${DestinationPath}'
+            - Name: AWS_S3_BUCKET
+              Value: !Ref SourceBucketName
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn
             - Name: AQUILA_BASEURL
@@ -344,12 +415,10 @@ Resources:
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:username}}' ]]
             - Name: SQL_DB_PASSWORD
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:password}}' ]]
-          MountPoints:
-            - SourceVolume: efs
-              ContainerPath: !Ref EfsRootPath
-              ReadOnly: false
           PortMappings:
             - ContainerPort: 80
+          LinuxParameters:
+            InitProcessEnabled: true
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -357,6 +426,7 @@ Resources:
               "awslogs-region": !Ref AWS::Region
               "awslogs-stream-prefix": "ecs"
       ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
       Family: !Ref ApplicationName
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -371,15 +441,6 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
-      Volumes: 
-        - Name: efs
-          EFSVolumeConfiguration:
-            FilesystemId: !Ref EfsId
-            RootDirectory: /
-            TransitEncryption: ENABLED
-            AuthorizationConfig:
-              AccessPointId: !Ref EfsAccessPointId
-              IAM: DISABLED
 
   QcECSService:
     Type: AWS::ECS::Service
@@ -387,6 +448,7 @@ Resources:
       Cluster: !Ref EcsClusterName
       LaunchType: FARGATE
       DesiredCount: 0
+      EnableExecuteCommand: true
       Tags:
         - Key: Environment
           Value: !Ref ApplicationEnvironment
