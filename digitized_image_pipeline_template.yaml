@@ -149,6 +149,9 @@ Resources:
       CapacityProviders: 
         - FARGATE
       ClusterName: DigitizedImageCluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
       Tags: 
         - Key: Environment
           Value: !Ref Environment
