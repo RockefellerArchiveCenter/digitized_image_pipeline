@@ -417,6 +417,7 @@ Resources:
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:password}}' ]]
           PortMappings:
             - ContainerPort: 80
+          ReadonlyRootFilesystem: true
           LinuxParameters:
             InitProcessEnabled: true
           LogConfiguration:
