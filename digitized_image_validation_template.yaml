@@ -221,6 +221,7 @@ Resources:
             - SourceVolume: efs
               ContainerPath: !Ref EfsRootPath
               ReadOnly: false
+          ReadonlyRootFilesystem: true
           LogConfiguration:
             LogDriver: awslogs
             Options:
