@@ -154,11 +154,21 @@ Resources:
                   - 'ecr:GetDownloadUrlForLayer'
                   - 'ecr:BatchGetImage'
                 Resource: 
-                  - !Sub arn:aws:ecr:${AWS::Region}:${ContainerAccountId}:repository/${ApplicationName}
+                  - !Sub arn:${AWS::Partition}:ecr:${AWS::Region}:${ContainerAccountId}:repository/${ApplicationName}
               - Effect: Allow
                 Action:
                   - 'ecr:GetAuthorizationToken'
                 Resource: "*"
+        - PolicyName: SSMPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameters'
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}/*
+
 
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -187,7 +197,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - 'logs:DescribeLogGroups'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
         - PolicyName: LogEventPolicy
           PolicyDocument: 
             Version: '2012-10-17'
@@ -197,7 +207,7 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:DescribeLogStreams'
                   - 'logs:PutLogEvents'
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/ecs/${EcsClusterName}:*'
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/ecs/${EcsClusterName}:*'
         - PolicyName: SSMPolicy
           PolicyDocument: 
             Version: '2012-10-17'
@@ -209,7 +219,7 @@ Resources:
                   - 'ssmmessages:OpenControlChannel'
                   - 'ssmmessages:OpenDataChannel'
                 Resource: '*'
-
+  
   DigitizedImageQcUser:
     Type: AWS::IAM::User
     Properties:
@@ -226,6 +236,30 @@ Resources:
     Properties: 
       UserName: !Ref DigitizedImageQcUser
 
+  DigitizedImageQcUserIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Secret Access Key ID for DigitizedImageQcUser.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/AWS_ACCESS_KEY_ID
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !Ref DigitizedImageQcUserAccessKey
+
+  DigitizedImageQcUserKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Secret Access Key for DigitizedImageQcUser.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/AWS_SECRET_ACCESS_KEY
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !GetAtt DigitizedImageQcUserAccessKey.SecretAccessKey
+
   DigitizedImageQcUserPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -236,11 +270,11 @@ Resources:
           - Effect: Allow
             Action:
               - 's3:GetObject'
-            Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${SourceBucketName}/*'
           - Effect: Allow
             Action:
               - 's3:ListBucket'
-            Resource: !Sub 'arn:aws:s3:::${SourceBucketName}'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${SourceBucketName}'
       Users:
         - !Ref DigitizedImageQcUser
 
@@ -281,7 +315,7 @@ Resources:
                 Action: 
                   - 'ssm:GetParametersByPath'
                 Resource:
-                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}
         - PolicyName: DigitizedImageQcS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -290,7 +324,7 @@ Resources:
                 Action:
                   - 's3:GetObject'
                   - 's3:DeleteObject'
-                Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${SourceBucketName}/*'
         - PolicyName: DigitizedImageQcS3BucketPolicy
           PolicyDocument: 
             Version: '2012-10-17'
@@ -298,7 +332,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - 's3:ListBucket'
-                Resource: !Sub 'arn:aws:s3:::${SourceBucketName}'
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${SourceBucketName}'
   
   DBSecrets:
     Type: AWS::SecretsManager::Secret
@@ -389,10 +423,6 @@ Resources:
               Value: !Ref ApplicationHostName
             - Name: APPLICATION_PORT
               Value: "80"
-            - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref DigitizedImageQcUserAccessKey
-            - Name: AWS_SECRET_ACCESS_KEY
-              Value: !GetAtt DigitizedImageQcUserAccessKey.SecretAccessKey
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
@@ -417,7 +447,11 @@ Resources:
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:password}}' ]]
           PortMappings:
             - ContainerPort: 80
-          ReadonlyRootFilesystem: true
+          Secrets:
+            - Name: AWS_ACCESS_KEY_ID
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DigitizedImageQcUserIdParameter}'
+            - Name: AWS_SECRET_ACCESS_KEY
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DigitizedImageQcUserKeyParameter}'
           LinuxParameters:
             InitProcessEnabled: true
           LogConfiguration:

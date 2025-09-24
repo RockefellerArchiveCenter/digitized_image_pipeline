@@ -156,11 +156,21 @@ Resources:
                   - 'ecr:GetDownloadUrlForLayer'
                   - 'ecr:BatchGetImage'
                 Resource: 
-                  - !Sub arn:aws:ecr:${AWS::Region}:${ContainerAccountId}:repository/${ApplicationName}
+                  - !Sub arn:${AWS::Partition}:ecr:${AWS::Region}:${ContainerAccountId}:repository/${ApplicationName}
               - Effect: Allow
                 Action:
                   - 'ecr:GetAuthorizationToken'
                 Resource: "*"
+        - PolicyName: SSMPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameters'
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}/*
+
 
   DigitizedImagePackagingUser:
     Type: AWS::IAM::User
@@ -177,6 +187,30 @@ Resources:
     Type: AWS::IAM::AccessKey
     Properties: 
       UserName: !Ref DigitizedImagePackagingUser
+
+  DigitizedImagePackagingUserIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Secret Access Key ID for DigitizedImagePackagingUser.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/AWS_ACCESS_KEY_ID
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !Ref DigitizedImagePackagingUserAccessKey
+
+  DigitizedImagePackagingUserKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Secret Access Key for DigitizedImagePackagingUser.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/AWS_SECRET_ACCESS_KEY
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !GetAtt DigitizedImagePackagingUserAccessKey.SecretAccessKey
 
   DigitizedImagePackagingRole:
     Type: AWS::IAM::Role
@@ -211,19 +245,19 @@ Resources:
                   - 's3:PutObject'
                   - 's3:DeleteObject'
                 Resource: 
-                  - !Sub 'arn:aws:s3:::${SourceBucketName}/*'
-                  - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
-                  - !Sub 'arn:aws:s3:::${PdfDestinationBucketName}/*'
-                  - !Sub 'arn:aws:s3:::${EmbargoedDestinationBucket}/*'
-                  - !Sub 'arn:aws:s3:::${EmbargoedPdfDestinationBucket}/*'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${SourceBucketName}/*'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${DestinationBucketName}/*'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${PdfDestinationBucketName}/*'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${EmbargoedDestinationBucket}/*'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${EmbargoedPdfDestinationBucket}/*'
               - Sid: BucketPolicy
                 Effect: Allow
                 Action:
                   - 's3:ListBucket'
                 Resource:
-                  - !Sub 'arn:aws:s3:::${SourceBucketName}'
-                  - !Sub 'arn:aws:s3:::${EmbargoedDestinationBucket}'
-                  - !Sub 'arn:aws:s3:::${EmbargoedPdfDestinationBucket}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${SourceBucketName}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${EmbargoedDestinationBucket}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${EmbargoedPdfDestinationBucket}'
         - PolicyName: DigitizedImagePackagingSNSPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -302,10 +336,6 @@ Resources:
               Value: !Ref ApplicationEnvironment
             - Name: APP_CONFIG_PATH
               Value: !Ref ApplicationName
-            - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref DigitizedImagePackagingUserAccessKey
-            - Name: AWS_SECRET_ACCESS_KEY
-              Value: !GetAtt DigitizedImagePackagingUserAccessKey.SecretAccessKey
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: AWS_ROLE_ARN
@@ -329,6 +359,11 @@ Resources:
               ContainerPath: !Ref EfsRootPath
               ReadOnly: false
           ReadonlyRootFilesystem: true
+          Secrets:
+            - Name: AWS_ACCESS_KEY_ID
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DigitizedImagePackagingUserIdParameter}'
+            - Name: AWS_SECRET_ACCESS_KEY
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DigitizedImagePackagingUserKeyParameter}'
           LogConfiguration:
             LogDriver: awslogs
             Options:
