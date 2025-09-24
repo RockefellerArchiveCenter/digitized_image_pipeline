@@ -79,11 +79,20 @@ Resources:
                   - 'ecr:GetDownloadUrlForLayer'
                   - 'ecr:BatchGetImage'
                 Resource: 
-                  - !Sub arn:aws:ecr:${AWS::Region}:${ContainerAccountId}:repository/${ApplicationName}
+                  - !Sub arn:${AWS::Partition}:ecr:${AWS::Region}:${ContainerAccountId}:repository/${ApplicationName}
               - Effect: Allow
                 Action:
                   - 'ecr:GetAuthorizationToken'
                 Resource: "*"
+        - PolicyName: SSMPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameters'
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ApplicationEnvironment}/${ApplicationName}/*
 
   DigitizedImageValidationUser:
     Type: AWS::IAM::User
@@ -100,6 +109,30 @@ Resources:
     Type: AWS::IAM::AccessKey
     Properties: 
       UserName: !Ref DigitizedImageValidationUser
+
+  DigitizedImageValidationUserIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Secret Access Key ID for DigitizedImageValidationUser.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/AWS_ACCESS_KEY_ID
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !Ref DigitizedImageValidationUserAccessKey
+
+  DigitizedImageValidationUserKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Secret Access Key for DigitizedImageValidationUser.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/AWS_SECRET_ACCESS_KEY
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !GetAtt DigitizedImageValidationUserAccessKey.SecretAccessKey
 
   DigitizedImageValidationS3Role:
     Type: AWS::IAM::Role
@@ -130,8 +163,8 @@ Resources:
                 Action: 
                   - 's3:ListBucket'
                 Resource: 
-                  - !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload
-                  - !Sub arn:aws:s3:::${DestinationBucketName}
+                  - !Sub arn:${AWS::Partition}:s3:::rac-${ApplicationEnvironment}-image-upload
+                  - !Sub arn:${AWS::Partition}:s3:::${DestinationBucketName}
         - PolicyName: DigitizedImageValidationS3ObjectPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -142,8 +175,8 @@ Resources:
                   - 's3:DeleteObject'
                   - 's3:PutObject'
                 Resource: 
-                  - !Sub arn:aws:s3:::rac-${ApplicationEnvironment}-image-upload/*
-                  - !Sub arn:aws:s3:::${DestinationBucketName}/*
+                  - !Sub arn:${AWS::Partition}:s3:::rac-${ApplicationEnvironment}-image-upload/*
+                  - !Sub arn:${AWS::Partition}:s3:::${DestinationBucketName}/*
   
   DigitizedImageValidationSnsRole:
     Type: AWS::IAM::Role
@@ -197,10 +230,6 @@ Resources:
           Image: !Sub "${ContainerAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApplicationName}:${ApplicationEnvironment}"
           Essential: true
           Environment:
-            - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref DigitizedImageValidationUserAccessKey
-            - Name: AWS_SECRET_ACCESS_KEY
-              Value: !GetAtt DigitizedImageValidationUserAccessKey.SecretAccessKey
             - Name: AWS_S3_ROLE_ARN
               Value: !GetAtt DigitizedImageValidationS3Role.Arn
             - Name: AWS_SNS_ROLE_ARN
@@ -222,6 +251,11 @@ Resources:
               ContainerPath: !Ref EfsRootPath
               ReadOnly: false
           ReadonlyRootFilesystem: true
+          Secrets:
+            - Name: AWS_ACCESS_KEY_ID
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DigitizedImageValidationUserIdParameter}'
+            - Name: AWS_SECRET_ACCESS_KEY
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DigitizedImageValidationUserKeyParameter}'
           LogConfiguration:
             LogDriver: awslogs
             Options:
