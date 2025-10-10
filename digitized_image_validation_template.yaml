@@ -18,21 +18,12 @@ Parameters:
   ApplicationName:
     Type: String
     Description: Name of the application to be deployed.
-  EfsId:
-    Type: String
-    Description: Identifier for temporary storage EFS.
-  EfsAccessPointId:
-    Type: String
-    Description: Identifier for temporary storage EFS access point.
-  EfsRootPath:
-    Type: String
-    Description: Root path at which EFS is mounted.
-  StoragePath:
-    Type: String
-    Description: Temporary storage path into which files are moved during processing.
   DestinationBucketName:
     Type: String
     Description: Name of bucket to which valid files are moved after processing.
+  EbsStorageMountPath:
+    Type: String
+    Description: Mount path for EBS storage
   Workload:
     Type: String
     Description: Name of workload for this stack.
@@ -238,17 +229,17 @@ Resources:
               Value: !Ref ApplicationEnvironment
             - Name: APP_CONFIG_PATH
               Value: !Ref ApplicationName
-            - Name: TMP_DIR
-              Value: !Sub '${EfsRootPath}/${StoragePath}'
             - Name: DESTINATION_BUCKET
               Value: !Ref DestinationBucketName
             - Name: AWS_REGION_NAME
               Value: !Ref AWS::Region
             - Name: AWS_SNS_TOPIC
               Value: !ImportValue DigitizedImage-SNSTopicArn
+            - Name: TMP_DIR
+              Value: !Ref EbsStorageMountPath
           MountPoints:
-            - SourceVolume: efs
-              ContainerPath: !Ref EfsRootPath
+            - SourceVolume: ebs
+              ContainerPath: !Ref EbsStorageMountPath
               ReadOnly: false
           ReadonlyRootFilesystem: true
           Secrets:
@@ -278,14 +269,8 @@ Resources:
         - Key: Workload
           Value: !Ref Workload
       Volumes: 
-        - Name: efs
-          EFSVolumeConfiguration:
-            FilesystemId: !Ref EfsId
-            RootDirectory: /
-            TransitEncryption: ENABLED
-            AuthorizationConfig:
-              AccessPointId: !Ref EfsAccessPointId
-              IAM: DISABLED
+        - Name: ebs
+          ConfiguredAtLaunch: true
 
 Outputs:
   ValidationECSTask:
