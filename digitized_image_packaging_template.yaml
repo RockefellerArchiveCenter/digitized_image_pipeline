@@ -18,27 +18,18 @@ Parameters:
   ApplicationName:
     Type: String
     Description: Name of the application to be deployed.
-  EfsId:
-    Type: String
-    Description: Identifier for temporary storage EFS.
-  EfsAccessPointId:
-    Type: String
-    Description: Identifier for temporary storage EFS access point.
-  EfsRootPath:
-    Type: String
-    Description: Root path at which EFS is mounted.
   SourceBucketName:
     Type: String
     Description: Name of bucket in which which source files are stored.
-  TemporaryPath:
-    Type: String
-    Description: Location in EFS mount at which files are unpacked.
   DestinationBucketName:
     Type: String
     Description: Name of S3 bucket to which packaged files should be delivered.
   PdfDestinationBucketName:
     Type: String 
     Description: Name of s3 bucket to which PDF files should be delivered.
+  EbsStorageMountPath:
+    Type: String
+    Description: Mount path for EBS storage
   ArchivesSpaceRepo:
     Type: String
     Description: ArchivesSpace repository identifier.
@@ -342,8 +333,6 @@ Resources:
               Value: !GetAtt DigitizedImagePackagingRole.Arn
             - Name: AWS_SOURCE_BUCKET
               Value: !Ref SourceBucketName
-            - Name: TMP_DIR
-              Value: !Sub '${EfsRootPath}/${TemporaryPath}'
             - Name: AWS_DESTINATION_BUCKET
               Value: !Ref DestinationBucketName
             - Name: AWS_PDF_DESTINATION_BUCKET
@@ -353,10 +342,12 @@ Resources:
             - Name: AWS_EMBARGOED_PDF_DESTINATION_BUCKET
               Value: !Ref EmbargoedPdfDestinationBucket
             - Name: AWS_SNS_TOPIC
-              Value: !ImportValue DigitizedImage-SNSTopicArn      
+              Value: !ImportValue DigitizedImage-SNSTopicArn
+            - Name: TMP_DIR
+              Value: !Ref EbsStorageMountPath     
           MountPoints:
-            - SourceVolume: efs
-              ContainerPath: !Ref EfsRootPath
+            - SourceVolume: ebs
+              ContainerPath: !Ref EbsStorageMountPath
               ReadOnly: false
           ReadonlyRootFilesystem: true
           Secrets:
@@ -386,14 +377,8 @@ Resources:
         - Key: Workload
           Value: !Ref Workload
       Volumes: 
-        - Name: efs
-          EFSVolumeConfiguration:
-            FilesystemId: !Ref EfsId
-            RootDirectory: /
-            TransitEncryption: ENABLED
-            AuthorizationConfig:
-              AccessPointId: !Ref EfsAccessPointId
-              IAM: DISABLED
+        - Name: ebs
+          ConfiguredAtLaunch: true
 
 Outputs:
   PackagingECSTask:

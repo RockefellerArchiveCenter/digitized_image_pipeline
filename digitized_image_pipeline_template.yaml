@@ -75,6 +75,11 @@ Parameters:
     Type: String
     Default: digitized_image_pipeline
     Description: Name of workload for this stack.
+  EbsStorageMountPath:
+    Type: String
+    Default: "/ebs"
+    Description: Path at which EBS storage for tasks is mounted.
+
 
 Resources:
   # QC Bucket
@@ -94,53 +99,6 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-
-  # Temporary Storage
-  TemporaryStorage:
-    Type: AWS::EFS::FileSystem
-    Properties: 
-      Encrypted: true
-      FileSystemTags: 
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Application
-          Value: digitized-image-temporary-storage
-        - Key: Workload
-          Value: !Ref Workload
-      LifecyclePolicies: 
-        - TransitionToIA: AFTER_30_DAYS
-      PerformanceMode: generalPurpose
-      ThroughputMode: elastic
-
-  MountTargetResource1:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref TemporaryStorage
-      SubnetId: !FindInMap [DeployResources, Subnet, !Ref Environment]
-      SecurityGroups:
-      - !FindInMap [DeployResources, SecurityGroup, !Ref Environment]
-
-  # Temporary Storage Access Point
-  TemporaryStorageAccessPoint:
-    Type: 'AWS::EFS::AccessPoint'
-    Properties:
-      AccessPointTags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Application
-          Value: digitized-image-temporary-storage
-        - Key: Workload
-          Value: !Ref Workload
-      FileSystemId: !Ref TemporaryStorage
-      PosixUser:
-        Uid: "1000"
-        Gid: "1000"
-      RootDirectory:
-        CreationInfo:
-          OwnerGid: "1000"
-          OwnerUid: "1000"
-          Permissions: "755"
-        Path: "/digitized-image"
   
   # ECS Cluster
   DigitizedImageECSCluster:
@@ -201,6 +159,7 @@ Resources:
         ECSClusterName: !Ref DigitizedImageECSCluster
         ECSSubnetName: !FindInMap [DeployResources, Subnet, !Ref Environment]
         ECSSecurityGroupName: !FindInMap [DeployResources, EcsSecurityGroup, !Ref Environment]
+        EbsStorageMountPath: !Ref EbsStorageMountPath
         ParentStackName: !Ref AWS::StackName
         Workload: !Ref Workload
         
@@ -223,11 +182,8 @@ Resources:
       Parameters:
         ApplicationEnvironment: !Ref Environment
         ApplicationName: digitized_image_validation
-        EfsId: !Ref TemporaryStorage
-        EfsAccessPointId: !Ref TemporaryStorageAccessPoint
-        EfsRootPath: '/efs'
-        StoragePath: 'validate'
         DestinationBucketName: !Ref QcBucket
+        EbsStorageMountPath: !Ref EbsStorageMountPath
         Workload: !Ref Workload
 
   # QC web application
@@ -277,13 +233,10 @@ Resources:
       Parameters:
         ApplicationEnvironment: !Ref Environment
         ApplicationName: digitized_image_packaging
-        EfsId: !Ref TemporaryStorage
-        EfsAccessPointId: !Ref TemporaryStorageAccessPoint
-        EfsRootPath: '/efs'
         SourceBucketName: !Ref QcBucket
-        TemporaryPath: 'packaging_tmp'
         DestinationBucketName: !FindInMap [Package, DestinationBucket, !Ref Environment]
         PdfDestinationBucketName: !FindInMap [Package, PdfDestinationBucket, !Ref Environment]
+        EbsStorageMountPath: !Ref EbsStorageMountPath
         ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
