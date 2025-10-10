@@ -29,6 +29,21 @@ Parameters:
   Workload:
     Type: String
     Description: Name of workload for this stack.
+  EbsStorageMountPath:
+    Type: String
+    Description: Mount path for EBS storage
+  WaiterDelay:
+    Type: String
+    Description: Time to wait before retrying service command in seconds
+    Default: 5
+  WaiterMaxAttempts:
+    Type: String
+    Description: Maximum number of retry attempts for service command
+    Default: 30
+  ExpansionRatio:
+    Type: String
+    Description: Ratio at which expanded packages are expected to increase
+    Default: 3.5
 
 Resources:
   UploadBucket:
@@ -75,6 +90,21 @@ Resources:
               AWS:
                 - 'arn:aws:iam::562779183889:user/rac-upload-user' # Crowley
                 - 'arn:aws:iam::034638293334:user/NEDCC-Imaging' # NEDCC
+
+  EcsInfrastructureRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForVolumes
 
   DigitizedImageTriggerFunctionRole:
     Type: AWS::IAM::Role
@@ -142,6 +172,17 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: !GetAtt TriggerLogGroup.Arn
+        - PolicyName: PassEcsInfrastructureRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'iam:PassRole'
+                Resource: !GetAtt EcsInfrastructureRole.Arn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: ecs.amazonaws.com
 
   ECSClusterParam:
     Type: AWS::SSM::Parameter
@@ -191,7 +232,63 @@ Resources:
         Workload: !Ref Workload
       Type: String
       Value: !ImportValue DigitizedImage-QcEcsServiceName
-
+  WaiterDelayParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Time to delay before retrying waiter in seconds
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/WAIT_DELAY
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !Ref WaiterDelay
+  WaiterMaxAttemptsParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Maximum retry attempts for waiter
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/WAIT_MAX_ATTEMPTS
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !Ref WaiterMaxAttempts
+  ExpansionRatioParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Ratio at which uncompressed packages expand
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/EXPANSION_RATIO
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !Ref ExpansionRatio
+  EbsStorageMountPathParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Mount path for EBS storage
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/EBS_STORAGE_MOUNT_PATH
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !Ref EbsStorageMountPath
+  EbsVolumeRole:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: IAM role which allows ECS to configure volumes
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/EBS_VOLUME_ROLE
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+      Type: String
+      Value: !GetAtt EcsInfrastructureRole.Arn
+  
+  
   DigitizedImageTriggerFunction:
     Type: AWS::Lambda::Function
     Properties:
