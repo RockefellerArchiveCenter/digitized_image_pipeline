@@ -56,7 +56,7 @@ Parameters:
   SqlVersion:
     Type: String
     Description: Version of the SQL engine to use.
-    Default: '15.2'
+    Default: '15.12'
   TargetGroupArn:
     Type: String
     Description: ARN for Target Group on load balancer.
@@ -77,6 +77,7 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
         Workload: !Ref Workload
+        WorkloadType: processing
       Type: String
       Value: !Ref ArchivesSpaceRepo
   ArchivesSpaceBaseUrlParameter:
@@ -88,6 +89,7 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
         Workload: !Ref Workload
+        WorkloadType: processing
       Type: String
       Value: !Ref ArchivesSpaceBaseUrl
   ArchivesSpaceUsernameParameter:
@@ -99,6 +101,7 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
         Workload: !Ref Workload
+        WorkloadType: processing
       Type: String
       Value: !Ref ArchivesSpaceUsername
   ArchivesSpacePasswordParameter:
@@ -110,6 +113,7 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
         Workload: !Ref Workload
+        WorkloadType: processing
       Type: String
       Value: !Ref ArchivesSpacePassword
 
@@ -123,6 +127,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -180,6 +186,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -230,6 +238,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
 
   DigitizedImageQcUserAccessKey:
     Type: AWS::IAM::AccessKey
@@ -245,6 +255,7 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
         Workload: !Ref Workload
+        WorkloadType: processing
       Type: String
       Value: !Ref DigitizedImageQcUserAccessKey
 
@@ -257,6 +268,7 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
         Workload: !Ref Workload
+        WorkloadType: processing
       Type: String
       Value: !GetAtt DigitizedImageQcUserAccessKey.SecretAccessKey
 
@@ -288,6 +300,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       RoleName: digitized-image-qc-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -344,6 +358,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       Description: 'Secrets for RDS instance'
       GenerateSecretString:
         SecretStringTemplate: '{"username": "digitizedimageqcuser"}'
@@ -363,6 +379,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       DatabaseName: !Ref SqlDatabaseName
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       Engine: aurora-postgresql
@@ -386,10 +404,12 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       DBInstanceClass: db.serverless
       DBClusterIdentifier: !Ref DBCluster
       Engine: aurora-postgresql
-      EngineVersion: '15.4'
+      EngineVersion: !Ref SqlVersion
       PubliclyAccessible: false
 
   QcLogGroup:
@@ -402,6 +422,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       LogGroupName: !Sub "/digitized_image/ecs/${ApplicationName}"
       RetentionInDays: 90
   
@@ -476,6 +498,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
 
   QcECSService:
     Type: AWS::ECS::Service
@@ -491,6 +515,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       TaskDefinition: !Ref QcECSTask
       NetworkConfiguration:
         AwsvpcConfiguration:
