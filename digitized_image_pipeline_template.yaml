@@ -93,6 +93,8 @@ Resources:
           Value: digitized-image-qc
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       BucketName: !Sub rac-${Environment}-image-qc
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
@@ -117,6 +119,8 @@ Resources:
           Value: digitized-image-ecs-cluster
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
 
   # Notifications Lambda
   NotificationsLambda:

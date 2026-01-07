@@ -32,6 +32,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -74,6 +76,8 @@ Resources:
             Value: !Ref ApplicationName
           - Key: Workload
             Value: !Ref Workload
+          - Key: WorkloadType
+            Value: processing
 
   TeamsUrlParameter:
     Type: AWS::SSM::Parameter
@@ -84,6 +88,7 @@ Resources:
         Environment: !Ref ApplicationEnvironment
         Application: !Ref ApplicationName
         Workload: !Ref Workload
+        WorkloadType: processing
       Type: String
       Value: !Ref TeamsUrl
 
@@ -111,6 +116,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       Architectures:
         - x86_64
 
@@ -124,6 +131,8 @@ Resources:
           Value: !Ref ApplicationName
         - Key: Workload
           Value: !Ref Workload
+        - Key: WorkloadType
+          Value: processing
       LogGroupName: !Sub "/aws/lambda/${ApplicationName}"
       RetentionInDays: 90
   
@@ -134,13 +143,6 @@ Resources:
       FunctionName: !Ref HandleDigitizedImageNotificationsFunction
       Principal: sns.amazonaws.com
       SourceArn: !Ref DigitizedImageEventsTopic
-
-  HandleDigitizedImageNotificationsFunctionDigitizedImageEventsTravisEcRPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref HandleDigitizedImageNotificationsFunction
-      Action: "lambda:UpdateFunctionCode"
-      Principal: "arn:aws:iam::817658541382:user/TravisECR"
   
   HandleDigitizedImageNotificationsFunctionDigitizedImageEvents:
     Type: AWS::SNS::Subscription
