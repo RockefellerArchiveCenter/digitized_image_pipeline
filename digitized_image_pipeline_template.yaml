@@ -79,6 +79,15 @@ Parameters:
     Type: String
     Default: "/ebs"
     Description: Path at which EBS storage for tasks is mounted.
+  MsAppId:
+    Type: String
+    Description: Microsoft App ID.
+  MsAppSecret:
+    Type: String
+    Description: Microsoft App secret.
+  MsAppAuthority:
+    Type: String
+    Description: URI for Microsoft App tenant login.
 
 
 Resources:
@@ -219,6 +228,9 @@ Resources:
         ArchivesSpacePassword: !Ref ArchivesSpacePassword
         TargetGroupArn: !FindInMap [DeployResources, TargetGroupArn, !Ref Environment]
         Workload: !Ref Workload
+        MsAppId: !Ref MsAppId
+        MsAppSecret: !Ref MsAppSecret
+        MsAppAuthority: !Ref MsAppAuthority
   
   # Package ECS Task
   PackageECSTask:
