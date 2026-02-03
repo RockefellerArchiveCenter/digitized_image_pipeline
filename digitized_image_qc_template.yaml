@@ -4,6 +4,15 @@ Description: >
 
   Supports quality control of digitized still image and textual assets.
 
+Mappings:
+  MsApp:
+    RedirectUri:
+      dev: https://digitized-image-qc.dev.rockarch.org/microsoft_authentication/callback
+      prod: https://digitized-image-qc.rockarch.org/microsoft_authentication/callback
+    LogoutUri:
+      dev: https://digitized-image-qc.dev.rockarch.org
+      prod: https://digitized-image-qc.rockarch.org
+
 Parameters:
   ContainerAccountId:
     Type: String
@@ -66,6 +75,19 @@ Parameters:
   Workload:
     Type: String
     Description: Name of workload for this stack.
+  MsAppId:
+    Type: String
+    Description: Microsoft App ID.
+  MsAppSecret:
+    Type: String
+    Description: Microsoft App secret.
+  MsAppAuthority:
+    Type: String
+    Description: URI for Microsoft App tenant login.
+  MsAppValidEmailDomains:
+    Type: String
+    Description: Valid email domains for Microsoft App.
+    Default: '["rockarch.org"]'
 
 Resources:  
   ArchivesSpaceRepoParameter:
@@ -467,6 +489,24 @@ Resources:
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:username}}' ]]
             - Name: SQL_DB_PASSWORD
               Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DBSecrets, ':SecretString:password}}' ]]
+            - Name: LOGIN_URL
+              Value: /microsoft_authentication/login
+            - Name: LOGOUT_URL
+              Value: /
+            - Name: MS_APP_ID
+              Value: !Ref MsAppId
+            - Name: MS_APP_SECRET
+              Value: !Ref MsAppSecret
+            - Name: MS_APP_REDIRECT
+              Value: !FindInMap [MsApp, RedirectUri, !Ref ApplicationEnvironment]
+            - Name: MS_APP_SCOPES
+              Value: '["user.read"]'
+            - Name: MS_APP_AUTHORITY
+              Value: !Ref MsAppAuthority
+            - Name: MS_APP_VALID_EMAIL_DOMAINS
+              Value: !Ref MsAppValidEmailDomains
+            - Name: MS_APP_LOGOUT_URI
+              Value: !FindInMap [MsApp, LogoutUri, !Ref ApplicationEnvironment]
           PortMappings:
             - ContainerPort: 80
           Secrets:
