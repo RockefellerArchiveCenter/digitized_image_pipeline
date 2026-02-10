@@ -170,6 +170,7 @@ Resources:
         ApplicationEnvironment: !Ref Environment
         ApplicationName: digitized_image_trigger
         ECSClusterName: !Ref DigitizedImageECSCluster
+        ECSContainerName: digitized_image_qc
         ECSSubnetName: !FindInMap [DeployResources, Subnet, !Ref Environment]
         ECSSecurityGroupName: !FindInMap [DeployResources, EcsSecurityGroup, !Ref Environment]
         EbsStorageMountPath: !Ref EbsStorageMountPath
