@@ -17,6 +17,9 @@ Parameters:
   ECSClusterName:
     Type: String
     Description: Name of the ECS Cluster in which the Task should be triggered.
+  ECSContainerName:
+    Type: String
+    Description: Name of container in ECS service.
   ECSSubnetName:
     Type: AWS::EC2::Subnet::Id
     Description: Name of the subnet in which the ECS Task should be triggered.
@@ -201,6 +204,19 @@ Resources:
         WorkloadType: processing
       Type: String
       Value: !Ref ECSClusterName
+  ECSContainerNameParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      AllowedPattern: "^[A-Za-z0-9\\-\\_]+$"
+      Description: Name of container in ECS service.
+      Name: !Sub /${ApplicationEnvironment}/${ApplicationName}/ECS_CONTAINER_NAME
+      Tags: 
+        Environment: !Ref ApplicationEnvironment
+        Application: !Ref ApplicationName
+        Workload: !Ref Workload
+        WorkloadType: processing
+      Type: String
+      Value: !Ref ECSContainerName
   ECSSubnetParam:
     Type: AWS::SSM::Parameter
     Properties: 
