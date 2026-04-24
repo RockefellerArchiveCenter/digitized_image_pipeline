@@ -452,8 +452,8 @@ Resources:
   QcECSTask:
     Type: AWS::ECS::TaskDefinition
     Properties: 
-      Cpu: "1024"
-      Memory: "3072"
+      Cpu: "2048"
+      Memory: "4096"
       ContainerDefinitions: 
         - Name: !Ref ApplicationName
           Image: !Sub "${ContainerAccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApplicationName}:${ApplicationEnvironment}"
