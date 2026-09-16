@@ -65,12 +65,6 @@ Parameters:
       - dev
       - prod
     Default: dev
-  TeamsUrl:
-    Type: String
-    Description: URL for a Teams channel webhook.
-  ArchivesSpacePassword:
-    Type: String
-    Description: ArchivesSpace password.
   Workload:
     Type: String
     Default: digitized_image_pipeline
@@ -79,15 +73,6 @@ Parameters:
     Type: String
     Default: "/ebs"
     Description: Path at which EBS storage for tasks is mounted.
-  MsAppId:
-    Type: String
-    Description: Microsoft App ID.
-  MsAppSecret:
-    Type: String
-    Description: Microsoft App secret.
-  MsAppAuthority:
-    Type: String
-    Description: URI for Microsoft App tenant login.
 
 
 Resources:
@@ -147,7 +132,7 @@ Resources:
       Parameters:
         ApplicationEnvironment: !Ref Environment
         ApplicationName: digitized_image_notifications
-        TeamsUrl: !Ref TeamsUrl
+        TeamsUrl: !Sub '{{resolve:secretsmanager:${Environment}/digitized-image-pipeline-deploy:SecretString:TeamsUrl}}'
         Workload: !Ref Workload
 
   # Trigger Lambda
@@ -226,12 +211,12 @@ Resources:
         ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
-        ArchivesSpacePassword: !Ref ArchivesSpacePassword
+        ArchivesSpacePassword: !Sub '{{resolve:secretsmanager:${Environment}/digitized-image-pipeline-deploy:SecretString:ArchivesSpacePassword}}'
         TargetGroupArn: !FindInMap [DeployResources, TargetGroupArn, !Ref Environment]
         Workload: !Ref Workload
-        MsAppId: !Ref MsAppId
-        MsAppSecret: !Ref MsAppSecret
-        MsAppAuthority: !Ref MsAppAuthority
+        MsAppId: !Sub '{{resolve:secretsmanager:${Environment}/digitized-image-pipeline-deploy:SecretString:MsAppId}}'
+        MsAppSecret: !Sub '{{resolve:secretsmanager:${Environment}/digitized-image-pipeline-deploy:SecretString:MsAppSecret}}'
+        MsAppAuthority: !Sub '{{resolve:secretsmanager:${Environment}/digitized-image-pipeline-deploy:SecretString:MsAppAuthority}}'
   
   # Package ECS Task
   PackageECSTask:
@@ -257,6 +242,6 @@ Resources:
         ArchivesSpaceRepo: !FindInMap [ArchivesSpace, Repo, !Ref Environment]
         ArchivesSpaceBaseUrl: !FindInMap [ArchivesSpace, BaseUrl, !Ref Environment]
         ArchivesSpaceUsername: !FindInMap [ArchivesSpace, Username, !Ref Environment]
-        ArchivesSpacePassword: !Ref ArchivesSpacePassword
+        ArchivesSpacePassword: !Sub '{{resolve:secretsmanager:${Environment}/digitized-image-pipeline-deploy:SecretString:ArchivesSpacePassword}}'
         AquilaBaseUrl: !FindInMap [Aquila, BaseUrl, !Ref Environment]
         Workload: !Ref Workload
